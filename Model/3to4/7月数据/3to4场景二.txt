@@ -1,0 +1,61 @@
+场景二：6月无4G流量且2/3G流量使用超过500M，通话时长大于120分钟的非4G终端用户
+sel a.prd_inst_id from
+
+
+
+(SELECT prd_inst_id FROM PV_DATA_Z.TMP_YUANLEI_ZC201803_XX
+
+
+WHERE latn_id not in (1004,1006) AND fz_flag = '1') a 
+
+
+inner join 
+ (sel * from PV_MART_Z.BAS_MOB_TERM_STR_MONTH 
+ where billing_cycle_id = 201806
+ and tdd_flux = 0
+ AND (Total_Flux/1024 > 500 OR CALL_DUR/60 >120)) b --预计转化率3.5%
+
+
+on a.prd_inst_id = b.prd_inst_id
+
+
+
+inner join 
+
+
+
+( 
+
+
+
+SELECT Prd_Inst_Id 
+ FROM pv_mart_z.bas_mob_term_str_month a 
+ inner join 
+ ( 
+
+
+
+select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='F' 
+
+
+) b 
+
+
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where Std_Prd_Inst_Stat_Id/10<>12 and billing_cycle_id=201806 
+
+
+) T5 
+ ON a.prd_inst_id=t5.Prd_Inst_Id
+
+
+转化率预估：3.5%左右
+
+
+通过计算4，5月的转化率，预计在3.5%左右
+
+
+
+数据条数：28768

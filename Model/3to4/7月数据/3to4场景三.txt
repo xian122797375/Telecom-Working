@@ -1,0 +1,65 @@
+场景三：6月非4G终端用户当前状态为4G终端的用户
+sel a.prd_inst_id from (SELECT * FROM PV_DATA_Z.TMP_YUANLEI_ZC201803_XX
+ WHERE latn_id not in (1004,1006) AND fz_flag = '1') a 
+
+
+
+inner join 
+
+
+
+( 
+
+
+
+SELECT Prd_Inst_Id 
+ FROM pv_mart_z.bas_mob_term_str_month a 
+ inner join 
+ ( 
+
+
+
+select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='F' 
+
+
+) b 
+
+
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where Std_Prd_Inst_Stat_Id/10<>12 and billing_cycle_id=201806 
+
+
+) T5 
+ ON a.prd_inst_id=t5.Prd_Inst_Id
+
+
+inner join (
+
+
+
+SELECT Prd_Inst_Id 
+
+
+
+FROM pv_mart_z.bas_mob_term_str_cur a 
+ inner join 
+ ( 
+
+
+
+select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='T' 
+
+
+) b 
+
+
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where Std_Prd_Inst_Stat_Id/10<>12 )c
+ on a.prd_inst_id=c.Prd_Inst_Id
+
+
+截止7.16号，业支组转化4G终端用户为户2061，占6月非4G终端用户1.67%，还剩户待转换非4G终端用户127301户

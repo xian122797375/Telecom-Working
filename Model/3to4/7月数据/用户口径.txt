@@ -1,0 +1,27 @@
+取数口径：
+ 一、3升4G
+营销目标：用户换4G终端
+ 锁定用户：取201806月份的非拆机的、非4G注册终端的、非无线宽带的用户
+
+
+
+--非4G终端 
+
+
+
+SELECT Prd_Inst_Id FROM pv_mart_z.bas_mob_term_str_month a 
+ inner join 
+ ( 
+
+
+
+select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='F' 
+
+
+) b 
+
+
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where a.billing_cycle_id=201806 and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,6)=101510 

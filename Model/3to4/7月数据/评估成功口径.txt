@@ -1,0 +1,25 @@
+转化为是4G注册终端（建议按月结算）
+
+
+
+--4G终端 
+
+
+
+SELECT Prd_Inst_Id 
+ FROM pv_mart_z.bas_mob_term_str_month a 
+ inner join 
+ ( 
+
+
+
+select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='T' 
+
+
+) b 
+
+
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where a.billing_cycle_id=201807 and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,6)=101510 
