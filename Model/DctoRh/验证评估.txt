@@ -1,0 +1,25 @@
+sel a.prd_inst_id from td_mart.zicai_dczr_20180719 a
+inner join (sel prd_inst_id from PV_MART_Z.BAS_MOB_TERM_STR_MONTH
+where billing_cycle_id = 201806 and (Inv_Amt / 100 > 70 or Total_Flux /1024 > 3000)) b
+on a.prd_inst_id = b.prd_inst_id  --数据结果表  39267户
+
+sel a.prd_inst_id from td_mart.zicai_dczr_20180719 a
+inner join (sel prd_inst_id from PV_MART_Z.BAS_MOB_TERM_STR_MONTH
+where billing_cycle_id = 201806 and (Inv_Amt / 100 > 70 or Total_Flux /1024 > 3000)) b
+on a.prd_inst_id = b.prd_inst_id
+
+inner join (SELECT prd_inst_id FROM PV_DATA_Z.TMP_YUANLEI_ZC201803_XX WHERE latn_id not in (1004,1006) AND fz_flag = '1' )d
+on a.prd_inst_id = d.prd_inst_id
+
+inner join (select prd_inst_id,ofr_id from PV_MART_Z.bas_prd_inst_month 
+where billing_cycle_id=201806 and Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(std_prd_id),1,4)=1015
+and acct_id not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where a.billing_cycle_id=201806
+and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,4)=3020) 
+and ofr_id not in (select ofr_id from PV_DATA_Z.prd_ofr where ofr_name like '%十全十美%' or ofr_name like '%不限量%'))c 
+on a.prd_inst_id = c.prd_inst_id 
+
+inner join
+(select prd_inst_id,ofr_id from PV_MART_Z.bas_prd_inst_cur 
+where ofr_id  in (select ofr_id from PV_DATA_Z.prd_ofr where ofr_name like '%十全十美%' or ofr_name like '%不限量%') )f
+on a.prd_inst_id = f.prd_inst_id--成功用户 825户 
+截止7.24 2.1%成功率
