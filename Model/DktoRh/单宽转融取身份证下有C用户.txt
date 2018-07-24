@@ -1,0 +1,40 @@
+drop table  td_work.tmp_1111;
+create table td_work.tmp_1111 as
+(
+sel a.*,b.Cert_Nbr 
+from  pv_mart_Z.BAS_PRD_INST_MONTH a
+left join pv_mart_z.BAS_PRD_INST_CUR b
+on a.prd_inst_id=b.prd_inst_id and b.Cert_Type_Id='2BA'
+where a.billing_cycle_id=201806 and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,4)=3020 
+and a.acct_id not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month 
+where billing_cycle_id=201806 and Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,4)=1015) 
+and a.prd_inst_id in (SELECT prd_inst_id FROM PV_DATA_Z.TMP_YUANLEI_ZC201803_XX
+ WHERE latn_id not in (1004,1006) AND fz_flag = '1') )with data
+PRIMARY INDEX  (Prd_Inst_Id);
+ 
+ 
+ drop table td_work.tmp_2222;
+ create table td_work.tmp_2222 as
+(
+sel a.*,b.Cert_Nbr 
+from  pv_mart_Z.BAS_PRD_INST_MONTH a
+left join pv_mart_z.BAS_PRD_INST_CUR b
+on a.prd_inst_id=b.prd_inst_id and b.Cert_Type_Id='2BA'
+AND (LENGTH(Cert_Nbr) = 18 or LENGTH(Cert_Nbr) = 16)
+AND Cert_Nbr NOT IN ('000000000000000000','111111111111111111','222222222222222222')
+where a.billing_cycle_id=201806 and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,4)=1015)with data
+PRIMARY INDEX  (Prd_Inst_Id);
+
+drop table td_work.tmp_3333;
+create table td_work.tmp_3333 as
+(
+sel *
+from td_work.tmp_1111 a
+where exists (select 1 from td_work.tmp_2222 b
+where a.Cert_Nbr=b.Cert_Nbr))with data
+PRIMARY INDEX  (Cert_Nbr);
+
+
+
+
+sel * from td_work.tmp_3333
