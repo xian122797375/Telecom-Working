@@ -66,6 +66,16 @@ train_y = new_data.iloc[:,-1]
 
 x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2)
 
+
+#回归
+gbm = lgb.LGBMRegressor(objective='regression',
+                        num_leaves=31,
+                        learning_rate=0.05,
+                        n_estimators=20).fit(X_train, y_train,
+        eval_set=[(X_test, y_test)],
+        eval_metric='l1',
+        early_stopping_rounds=5)
+
 clf = lgb.LGBMClassifier(
     boosting_type='gbdt', num_leaves=31, reg_alpha=0.0, reg_lambda=1,
     max_depth=-1, n_estimators=5000, objective='binary',

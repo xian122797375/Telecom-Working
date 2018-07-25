@@ -23,3 +23,11 @@ inner join
 where ofr_id  in (select ofr_id from PV_DATA_Z.prd_ofr where ofr_name like '%十全十美%' or ofr_name like '%不限量%') )f
 on a.prd_inst_id = f.prd_inst_id--成功用户 825户 
 截止7.24 2.1%成功率
+
+
+drop table td_work.zicai_dczr_20180724;
+create table  td_work.zicai_dczr_20180724 as(
+sel a.prd_inst_id from td_mart.zicai_dczr_20180719 a
+inner join (sel prd_inst_id from PV_MART_Z.BAS_MOB_TERM_STR_MONTH
+where billing_cycle_id = 201806 and (Inv_Amt / 100 > 70 or Total_Flux /1024 > 3000)) b
+on a.prd_inst_id = b.prd_inst_id )with data;
