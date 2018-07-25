@@ -31,3 +31,41 @@ and a.ofr_id not in (select ofr_id from PV_DATA_Z.prd_ofr where ofr_name like '%
 
 
 sel * from td_work.zicai_dkzr_20180724
+
+
+
+
+-725优化
+--drop table td_work.zicai_dkzr_20180724;
+create table td_work.zicai_dkzr_20180724  as(
+SELECT a.Prd_Inst_Id
+--,d.*,e.Inv_Bill_Amt  
+FROM PV_MART_Z.bas_prd_inst_month a 
+inner join (select prd_inst_id,ofr_id from PV_MART_Z.bas_prd_inst_month where billing_cycle_id=201806 and Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(std_prd_id),1,4)=3020 and ofr_id in (select ofr_id from PV_DATA_Z.prd_ofr where ofr_name like '%十全十美%' or ofr_name like '%不限量%')) c on a.prd_inst_id = c.prd_inst_id 
+inner join (SELECT prd_inst_id FROM PV_DATA_Z.TMP_YUANLEI_ZC201803_XX
+ WHERE latn_id not in (1004,1006) AND fz_flag = '1') b
+on a.prd_inst_id = b.prd_inst_id
+inner join (sel * from PV_MART_Z.BAS_PRD_INST_BRD_BEH_MONTH
+where billing_cycle_id = 201806) d
+on a.prd_inst_id = d.prd_inst_id
+inner join 
+(sel  * from PV_MART_Z.prd_serv_app_all_mon where billing_cycle_id=201806) e
+on a.prd_inst_id = e.prd_inst_id
+inner join
+(sel prd_inst_id from PV_MART_Z.APP_BRD_EXP_LST_MON where billing_cycle_id=201806
+and END_MONTH between  201806 and 201808)f
+on a.prd_inst_id = f.prd_inst_id
+
+inner join (sel prd_inst_id from td_work.tmp_3333) g
+on  a.prd_inst_id = g.prd_inst_id
+
+where a.billing_cycle_id=201806 and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,4)=3020 
+and acct_id not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a 
+where a.billing_cycle_id=201806 and a.Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(a.std_prd_id),1,4)=1015) 
+and a.ofr_id not in (select ofr_id from PV_DATA_Z.prd_ofr where ofr_name like '%十全十美%' or ofr_name like '%不限量%') 
+--and Inv_Bill_Amt /100 >40
+
+)with data;
+
+
+sel * from td_work.zicai_dkzr_20180724
