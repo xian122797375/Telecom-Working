@@ -1,0 +1,4 @@
+select * from pd_stage.Z04_IFUDATA_C2RH_0010700
+
+
+select * from pd_stage.Z04_IFUDATA_K2RH_0010700

@@ -25,11 +25,26 @@ import time
 # train_input = 'F:/01rh_date.txt'
 # train_input = 'F:/03train.txt'
 # train_input = '../data1/zicai/12train.txt'
-train_input = 'F:/03dantrain.txt'
-data = pd.read_csv(train_input, sep=',', header=0,iterator=True, chunksize=200000,encoding='gb2312')
+# train_input = '../data1/zicai/12train.txt'traindata.csv
+# train_input = 'F:/traindata.csv'to_xy.csv
+train_input = 'F:/to_xy.csv'
+# data = pd.read_csv(train_input, sep=',', header=0,iterator=True, chunksize=200000,encoding='gb2312')
+data = pd.read_csv(train_input, sep=',', header=0,iterator=True, chunksize=200000)
 data = data.get_chunk(6000000)
 data = data.fillna(0)
 data.head(5)
+
+train_x = data.iloc[:,1:-1]
+train_y = data.iloc[:,-1]
+
+# gbm = lgb.LGBMRegressor(objective='regression',
+#                         num_leaves=31,
+#                         learning_rate=0.05,
+#                         n_estimators=20).fit(train_x, train_y,
+#         eval_set=[(train_x, train_y)],
+#         eval_metric='l1',
+#         early_stopping_rounds=5)
+gbm = xgb.XGBRegressor().fit(train_x,train_y)
 
 # Index(['Prd_Inst_Id', 'Accs_Nbr', 'Latn_Id', 'Strategy_Segment_name',
 #        'gender_name', 'Age', 'Term_Type_Id', 'inv_bill_amt1', 'inv_bill_amt2',
@@ -64,17 +79,39 @@ train = RematchingDate(data,1)
 train_x = new_data.iloc[:,2:-3]
 train_y = new_data.iloc[:,-1]
 
+
 x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2)
-
-
 #回归
+gbm = xgb.XGBRegressor().fit(train_x,train_y)
 gbm = lgb.LGBMRegressor(objective='regression',
                         num_leaves=31,
                         learning_rate=0.05,
-                        n_estimators=20).fit(X_train, y_train,
-        eval_set=[(X_test, y_test)],
+                        n_estimators=5000).fit(train_x, train_y,
+        eval_set=[(train_x, train_y)],
         eval_metric='l1',
         early_stopping_rounds=5)
+
+
+test_input = 'F:/testdata.csv'
+test = pd.read_csv(test_input, sep=',', header=0,iterator=True, chunksize=200000,encoding='gb2312')
+test = test.get_chunk(4000000)
+test = test.fillna(0)
+
+Id = test.iloc[:,0]
+test_x = test.iloc[:,1:]
+# test_y = data.iloc[:,-1]
+y_train_pred = gbm.predict(test_x)
+
+y_train_pred = pd.DataFrame(y_train_pred , columns=['flag'])
+round(y_train_pred,2)
+result = pd.concat([Id, y_train_pred], axis=1)
+# result = result[result.flag == 1]
+
+print(result)
+result2 = result.iloc[:,0]
+result.to_csv('F:/result03.csv',index=False)
+
+
 
 clf = lgb.LGBMClassifier(
     boosting_type='gbdt', num_leaves=31, reg_alpha=0.0, reg_lambda=1,
@@ -84,6 +121,7 @@ clf = lgb.LGBMClassifier(
 )
 clf.fit(x_train, y_train, eval_set=[(x_train, y_train)], eval_metric='auc', early_stopping_rounds=100)
 # clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
+
 
 y_train_pred = clf.predict(x_train)
 y_test_pred = clf.predict(x_test)
