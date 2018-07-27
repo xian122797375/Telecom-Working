@@ -22,9 +22,9 @@ from sklearn.ensemble import RandomForestClassifier
 import lightgbm as lgb
 import time
 
-train_input = 'F:/to_xy.csv'
+train_input = 'F:/cdmals_543f_6l_100.txt'
 # data = pd.read_csv(train_input, sep=',', header=0,iterator=True, chunksize=200000,encoding='gb2312')
-data = pd.read_csv(train_input, sep=',', header=0,iterator=True, chunksize=200000,nrows=200000)
+data = pd.read_csv(train_input, sep='	', header=0,iterator=True, chunksize=200000,nrows=200000)
 data = data.get_chunk(6000000)
 data = data.fillna(0)
 data.head(5)
