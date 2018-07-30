@@ -303,29 +303,28 @@ data.groupby()
 for col in obname:
     train[col] = train[col].astype(np.float)
 
-A = pd.DataFrame(train['Accs_Grade'].value_counts())
+# A = pd.DataFrame(train['Accs_Grade'].value_counts())
 
-A = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt'])
-S = 0
+Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt'])
+Size_sum = 0
 a = list()
 for i in range(len(A)):
     print(i)
-    Col_Sum = A.cnt.sum(axis=0)
-    if S / Col_Sum < 0.8:
-        S = A.iloc[i,0] + S
-        a.append(A.index[i])
+    Col_Sum = Size_count.cnt.sum(axis=0)
+    if Size_sum / Col_Sum < 0.8:
+        Size_sum = Size_count.iloc[i,0] + Size_sum
+        a.append(Size_count.index[i])
     else:
         break
 print(a)
 
-train[(train.iloc[:, 161] == 0) 
-if train['Accs_Grade'] == a[0]:
-    # train['new_{}'].format(col)
-    train['Accs_Grade_New'] = 1
+for i in range(len(a)):
+    print (i)
+    train.loc[train['Accs_Grade'] == a[i] , 'New_Accs_Grade']  = i + 1
+train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
 
-if train['Accs_Grade'] == a[1]:
-    # train['new_{}'].format(col)
-    train['New_Accs_Grade'] = 2
+
+
 
 
 
