@@ -275,12 +275,24 @@ import numpy as np
 #  'zhrh_last2',
 #  'Cde_Merge_Prom_Name_n_last2',
 #  'Age_subsection_last2',
-#  'flag']
+#  'flag'] #
 
-train_input = 'F:/cdmals_543f_6l_100.txt'
-# data = pd.read_csv(train_input, sep=',', header=0,iterator=True, chunksize=200000,encoding='gb2312')
-data = pd.read_csv(train_input, sep='	', header=0, iterator=True, chunksize=200000, nrows=200000)
-data = data.get_chunk(6000000)
+
+
+# train_data = lgb.Dataset(data, label=label, feature_name=['c1', 'c2', 'c3'], categorical_feature=['c3'])
+#----------------------------------------------参数区------------------------------------------------------#
+categorical_feature = [] #自定义初始分类变量
+chunk_size = 20000
+data_cnt = 100000
+train_path = 'F:/cdmals_543f_6l.txt'
+
+#----------------------------------------------功能区------------------------------------------------------#
+def chunk_read_data(file_path, chunk_size, data_cnt):
+    '''文件批量读取'''
+    data = pd.read_csv(file_path, sep='\t', header=0, iterator=True, chunksize=chunk_size, low_memory=False)
+    train = data.get_chunk(data_cnt)
+    print('文件读取完毕,总计{}条'.format(train.shape[0]))
+    return train
 
 
 def Fix_Missing(Enter_Date, Model=False):
@@ -291,36 +303,52 @@ def Fix_Missing(Enter_Date, Model=False):
     return Enter_Date
 
 
-train = Fix_Missing(data)
+#--------------------------------------------主程序区------------------------------------------------------#
+train = chunk_read_data(train_path, chunk_size, data_cnt)
+train = Fix_Missing(train)
+
+new_train = train
+for i in train.columns:
+    Category_Count = pd.DataFrame(train.groupby(i).size(), columns=['cnt'])  # 列分类统计
+    if len(Category_Count) == 1:
+        new_train = new_train.drop([i], axis=1)
+    # print('原始维度{}个,剔除后还剩下{}个'.format(train.shape[1],new_train.shape[1]) )
+    elif (len(Category_Count) < 30) & (len(Category_Count) > 1):
+        categorical_feature.append(i)
+    if Category_Count.loc[0] / Category_Count.cnt.sum(axis=0) > 0.9:
+        train[i] = train[i][train[i] != 0].replace(0)
+
+
 
 obname = list(train.select_dtypes(include=["object"]).columns)
 train_columns = list(train.columns)
+
 for i in obname:
     pd.to_numeric(data[i], errors='coerce').fillna(0)    #ignore  coerce
 
-data.groupby()
 
-for col in obname:
-    train[col] = train[col].astype(np.float)
+
+# for col in obname:
+#     train[col] = train[col].astype(np.float)
 
 # A = pd.DataFrame(train['Accs_Grade'].value_counts())
 
-Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt'])
-Size_sum = 0
-a = list()
-for i in range(len(A)):
+Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt']) #列分类统计
+Size_sum = 0 #存储累计列和
+Category = list() #存所剩种类
+for i in range(len(Size_count)):
     print(i)
     Col_Sum = Size_count.cnt.sum(axis=0)
     if Size_sum / Col_Sum < 0.8:
         Size_sum = Size_count.iloc[i,0] + Size_sum
-        a.append(Size_count.index[i])
+        Category.append(Size_count.index[i])
     else:
         break
-print(a)
+print(Category)
 
-for i in range(len(a)):
+for i in range(len(Category)):
     print (i)
-    train.loc[train['Accs_Grade'] == a[i] , 'New_Accs_Grade']  = i + 1
+    train.loc[train['Accs_Grade'] == Category[i] , 'New_Accs_Grade']  = i + 1
 train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
 
 
