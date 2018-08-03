@@ -1,0 +1,185 @@
+--drop table TD_ mart.RH_BAS_INF_MON_01;
+create multiset table TD_mart.RH_BAS_INF_MON_01 as (
+sel	a.prd_Inst_id
+		,A.ACCS_NBR
+		,latn_name
+		,Strategy_Segment_name
+		,gender_name
+		,a.age 
+		,a.Term_Type_Id
+		,a.inv_bill_amt/100  as inv_bill_amt1
+		,a1.inv_bill_amt/100  as inv_bill_amt2
+		,a2.inv_bill_amt/100  as inv_bill_amt3
+		,a3.inv_bill_amt/100  as inv_bill_amt4
+		,t2.O_Roam_Amt/100 as O_Roam_Amt,
+		a.total_flux/1024 as total_flux1
+		,a1.total_flux/1024 as total_flux2  --n-1流量
+		,a2.total_flux/1024 as total_flux3 --n-2流量
+		,a3.total_flux/1024 as total_flux4  --n-3流量
+		 ,t2.Sms_Cnt_u                                                                                                                                 
+		,t2.T_Call_Dur
+		,a.call_dur
+		,t3.Pckg_Voice_Dur as Pckg_Voice_Dur1
+		,t15.Pckg_Voice_Dur as Pckg_Voice_Dur2
+		,t16.Pckg_Voice_Dur as Pckg_Voice_Dur3
+		,t17.Pckg_Voice_Dur as Pckg_Voice_Dur4
+		,t3.Sms_Cnt as Sms_Cnt1
+	--	,t15.Sms_Cnt as Sms_Cnt2
+	--	,t16.Sms_Cnt as Sms_Cnt3
+	--	,t17.Sms_Cnt as Sms_Cnt4
+		,t4.Extrem_Base_Flux                                                                                                                                      
+		,a.Telecom_Ftp_3g_4g_Id
+		,a.Jt_Lte_Flag
+		 ,case	when t5.prd_inst_id is not null then 'T' ELSE 'F' END	BLACK_LIST                                                                                                                                          
+		,A.BIL_FLAG                                                                                                                                                                                                  
+		,Exp_Date                                                                                                                                                                                                       
+		,a.Prom_Amt/100 as Prom_Amt                                                                                                                                                                                           
+	--	,case	when t8.prd_inst_id is not null then 'T' ELSE	'F' END	FK_FLAG                                                              
+,case	when t7.prd_inst_id is not null then 'T' ELSE	'F' END	ZF_FLAG     
+		,val1
+		,val2
+		,val3
+		,A.INNET_DUR   
+		,case	when t9.prd_Inst_Id is not null then	  'T' ELSE	'F' END	 LABEL_1  
+		,case	when t10.prd_Inst_Id is not null then 'T' ELSE	'F' END	 LABEL_2
+		,case	when t11.prd_Inst_Id is not null then 'T' ELSE	'F' END	 LABEL_3     
+		
+                                                                                                                                                         
+ from    (sel  *  from	 pv_mart_z.bas_mob_term_str_month   
+ where	billing_cycle_id=201801
+  and	std_prd_Id/100=101510 and	bil_flag='T' )a  
+ left join    (sel  prd_Inst_id,inv_bill_amt,total_flux  from	 pv_mart_z.bas_mob_term_str_month   where	billing_cycle_id=201712 and	std_prd_Id/100=101510 and	bil_flag='T' ) a1     
+   on		 a.prd_Inst_id=a1.prd_Inst_id      
+ left join    (sel  prd_Inst_id,inv_bill_amt,total_flux   from	 pv_mart_z.bas_mob_term_str_month   where	billing_cycle_id=201711 and	std_prd_Id/100=101510 and	bil_flag='T' )a2   
+   on 	a.prd_Inst_id=a2.prd_Inst_id    
+ left join    (sel  prd_Inst_id,inv_bill_amt,total_flux   from	 pv_mart_z.bas_mob_term_str_month   where	billing_cycle_id=201710 and	std_prd_Id/100=101510 and	bil_flag='T' )a3   
+   on 	a.prd_Inst_id=a3.prd_Inst_id    
+                                                                                                                                                                                               
+inner join
+ (select	 * from	 pv_data_z.PRD_PRD_INST_EXT_MON                                                                                                                                                        
+		where	Billing_Cycle_Id=201801                                                                                                                                                                                  
+		and	Std_Merge_Prom_Type_Id in (101,102)
+		and  Cde_Merge_Prom_Name not  like '%十全十美%' 
+				AND  Cde_Merge_Prom_Name not like '%无双卡%99%' 
+				and Cde_Merge_Prom_Name  not like '%乐享家%' ) b                                                                                                                                                                               
+		on	a.prd_Inst_id=b.prd_Inst_id                                                                                                                                                                                  
+LEFT JOIN Pv_mart_z.dmn_loc_latn c                                                                                                                                                                              
+		on	a.latn_id=c.latn_id                                                                                                                                                                                          
+left join PV_mart_Z.dmn_str_segment d                                                                                                                                                                           
+		on	a.Strategy_Segment_Id=d.Strategy_Segment_Id                                                                                                                                                                  
+left join pv_mart_z.dmn_gender t1                                                                                                                                                                               
+		on	a.gender_id=t1.gender_id                                                                                                                                                                                     
+left join (select	 prd_inst_id                                                                                                                                                                                   
+							 ,O_Inet_Pp_Sms_Cnt+O_Onet_Pp_Sms_Cnt+T_Inet_Pp_Sms_Cnt+T_Onet_Pp_Sms_Cnt  Sms_Cnt_u                                                                                                                              
+							 ,T_Call_Dur,O_Roam_Amt/100 as  O_Roam_Amt                                                                                                                                                                          
+							from	 PV_MART_z.PRD_SERV_APP_ALL_MON                                                                                                                                                                            
+							where	 Billing_Cycle_Id = 201801)t2            						                                                                                                                                                                 
+		on	a.prd_inst_id=t2.prd_inst_id           
+		                                                                                                                                                                      
+left join (select	a.prd_inst_id,sum(Pckg_Voice_Dur)  as Pckg_Voice_Dur,sum(Sms_Cnt) as Sms_Cnt  ,sum(Wlan_Dur/60) as  Wlan_Dur 
+				from (sel * from 	pv_mart_z.BAS_PRD_INST_PRICING_MONTH where billing_cycle_id = 201801) a                                                                                                                                                                          
+				inner join PD_DATA.BR_PRICE_PLAN_CONFIG_MON b                                                                                                                                                                   
+						on	a.Pricing_Plan_Id=b.Offer_Nbr                                                                                                                                                                                
+						and	Month_Id=201801                                                                                                                                                                                             
+				inner join pd_data.BIL_PRICING_PLAN c                                                                                                                                                                           
+						on	a.Pricing_Plan_Id=c.Pricing_Plan_Id                                                                                                                                                                          
+						where	 billing_cycle_id=201801                                                                                                                                                                                  
+						group	by 1) t3                                                                                                                                                                                                  
+		on	a.prd_inst_id=t3.prd_Inst_id  
+		
+left join (select	a.prd_inst_id,sum(Pckg_Voice_Dur)  as Pckg_Voice_Dur,sum(Sms_Cnt) as Sms_Cnt  ,sum(Wlan_Dur/60) as  Wlan_Dur --新加历史信息n-1月份
+				from	(sel * from 	pv_mart_z.BAS_PRD_INST_PRICING_MONTH where billing_cycle_id = 201712) a                                                                                                                                                                          
+				inner join PD_DATA.BR_PRICE_PLAN_CONFIG_MON b                                                                                                                                                                   
+						on	a.Pricing_Plan_Id=b.Offer_Nbr                                                                                                                                                                                
+						and	Month_Id=201712                                                                                                                                                                                             
+				inner join pd_data.BIL_PRICING_PLAN c                                                                                                                                                                           
+						on	a.Pricing_Plan_Id=c.Pricing_Plan_Id                                                                                                                                                                          
+						where	 billing_cycle_id=201712                                                                                                                                                                                  
+						group	by 1) t15                                                                                                                                                                                                  
+		on	a.prd_inst_id=t15.prd_Inst_id  
+
+
+left join (select	a.prd_inst_id,sum(Pckg_Voice_Dur)  as Pckg_Voice_Dur,sum(Sms_Cnt) as Sms_Cnt  ,sum(Wlan_Dur/60) as  Wlan_Dur  --新加历史信息n-2月份
+				from	(sel * from 	pv_mart_z.BAS_PRD_INST_PRICING_MONTH where billing_cycle_id = 201711) a                                                                                                                                                                          
+				inner join PD_DATA.BR_PRICE_PLAN_CONFIG_MON b                                                                                                                                                                   
+						on	a.Pricing_Plan_Id=b.Offer_Nbr                                                                                                                                                                                
+						and	Month_Id=201711                                                                                                                                                                                             
+				inner join pd_data.BIL_PRICING_PLAN c                                                                                                                                                                           
+						on	a.Pricing_Plan_Id=c.Pricing_Plan_Id                                                                                                                                                                          
+						where	 billing_cycle_id=201711                                                                                                                                                                                  
+						group	by 1) t16                                                                                                                                                                                                
+		on	a.prd_inst_id=t16.prd_Inst_id  
+		
+		
+left join (select	a.prd_inst_id,sum(Pckg_Voice_Dur)  as Pckg_Voice_Dur,sum(Sms_Cnt) as Sms_Cnt  ,sum(Wlan_Dur/60) as  Wlan_Dur  --新加历史信息n-3月份
+				from	(sel * from 	pv_mart_z.BAS_PRD_INST_PRICING_MONTH where billing_cycle_id = 201710) a                                                                                                                                                                          
+				inner join PD_DATA.BR_PRICE_PLAN_CONFIG_MON b                                                                                                                                                                   
+						on	a.Pricing_Plan_Id=b.Offer_Nbr                                                                                                                                                                                
+						and	Month_Id=201710                                                                                                                                                                                             
+				inner join pd_data.BIL_PRICING_PLAN c                                                                                                                                                                           
+						on	a.Pricing_Plan_Id=c.Pricing_Plan_Id                                                                                                                                                                          
+						where	 billing_cycle_id=201710                                                                                                                                                                                  
+						group	by 1) t17                                                                                                                                                                                                
+		on	a.prd_inst_id=t17.prd_Inst_id  
+				                                                                                                                                                                             
+left join  (sel	prd_inst_id,Extrem_Base_Flux/1024  as  Extrem_Base_Flux                                                                                                                                              
+				from	PV_MART_z.BEH_MOB_STR_EXT_MON                                                                                                                                                                              
+				where	billing_cycle_id=201801) t4                                                                                                                                                                               
+				on	a.prd_inst_id=t4.prd_inst_id                                                                                                                                                                               
+left join (sel	* from	PV_DATA_z.BIL_CREDIT_ALARM_LIST                                                                                                                                                           
+				where	  Credit_List_Type_Id in (2,3))t5                                                                                                                                                                         
+				on	a.prd_Inst_id=t5.prd_Inst_id                                                                                                                                                                                 
+left join (sel	* 
+				from	PV_MART_z.BAS_PRD_INST_PROTOCOL_CUR                                                                                                                                                       
+				QUALIFY	  ROW_NUMBER() OVER (PARTITION BY prd_inst_id ORDER	BY Exp_Date DESC) = 1   ) t6                                                                                                                                                                                                            
+				on	a.prd_inst_id=t6.prd_inst_Id                                                                                                                                                                                 
+left join (sel	distinct prd_inst_id 
+				from	pv_mart_z.BEH_MID_CONT_BRAND_MON                                                                                                                                       
+				where	billing_cycle_id=201801                                                                                                                                                                                   
+				and	brand_id in ('402B01','402B02') )t7                                                                                                                                                                         
+				on	a.prd_inst_id=t7.prd_inst_id                                                                                                                                                                               
+--left join td_mart.zhangfk0215 t8                                                                                                                                                                                
+--				on	a.prd_inst_id=t8.prd_inst_Id 
+left join  (sel	prd_inst_id 
+				 from	pv_data_z.PRD_PRD_INST_EXT_mon
+				 where	Std_Merge_Prom_Type_Id in (101,102)
+				AND  ( Cde_Merge_Prom_Name  like '%十全十美%' 
+				or  Cde_Merge_Prom_Name  like '%无双卡%99%' 
+				or Cde_Merge_Prom_Name  like '%乐享家%' )
+				and	 billing_cycle_id=201801)  t9
+				 on	a.prd_Inst_id=t9.prd_Inst_id 
+left join   (sel	prd_inst_id 
+				  from	pv_data_z.PRD_PRD_INST_EXT_mon
+				  where	Std_Merge_Prom_Type_Id in (101,102)
+				  and	 billing_cycle_id=201802
+				  and  ( Cde_Merge_Prom_Name  like '%十全十美%' 
+				or  Cde_Merge_Prom_Name  like '%无双卡%99%' 
+				or Cde_Merge_Prom_Name  like '%乐享家%' ))  t10
+				 on	a.prd_Inst_id=t10.prd_Inst_id       
+left join     (sel	prd_inst_id 
+					from	pv_data_z.PRD_PRD_INST_EXT_mon
+					where	Std_Merge_Prom_Type_Id in (101,102)
+					and	 billing_cycle_id=201803
+					and  ( Cde_Merge_Prom_Name  like '%十全十美%' 
+				or  Cde_Merge_Prom_Name  like '%无双卡%99%' 
+				or Cde_Merge_Prom_Name  like '%乐享家%' ))  t11
+					on	a.prd_Inst_id=t11.prd_Inst_id       
+left join     (sel	prd_inst_id,count(distinct Pm_Prom_Inst_Id) as  val1 
+					from	 PV_MART_z.BAS_PM_PROM_INST_MONTH                                                                                                                       
+					where	 billing_cycle_id between 201709 and 201801
+					group	by 1   ) t12                                                                                                                                           
+					on	a.prd_Inst_id=t12.prd_Inst_id     
+left join     (sel	prd_inst_id,count(distinct Pm_Prom_Inst_Id) val2 
+					from	 PV_MART_z.BAS_PM_PROM_INST_MONTH                                                                                                                       
+					where	billing_cycle_id  between 201706 and 201801
+					group	by 1  ) t13
+	on	a.prd_Inst_id=t13.prd_Inst_id                                                                                                                                                                     
+ left join     (sel	prd_inst_id,count(distinct Pm_Prom_Inst_Id) val3 
+						from	 PV_MART_z.BAS_PM_PROM_INST_MONTH                                                                                                                       
+						where	billing_cycle_id between 201701 and 201801
+						group	by 1   ) t14
+				on	a.prd_Inst_id=t14.prd_Inst_id 
+										
+			group	by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39) 
+with	data ;
+primary index(prd_Inst_id);
