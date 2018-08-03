@@ -305,6 +305,7 @@ def Fix_Missing(Enter_Date, Model=False):
 
 def Data_Var_Convert(input_data, label):
     '''删除唯一值变量，自动筛选分类变量,80%单一变量值数据进行哑变量处理'''
+    categorical_feature = list()
     new_train = input_data.drop([label], axis=1)
     for i in new_train.columns:
         Category_Count = pd.DataFrame(train.groupby(i).size().sort_values(ascending=False), columns=['cnt'])  # 列分类统计
@@ -332,26 +333,31 @@ def Recoding_Cat_Data(data, feature):
     feature_new = list()
     print('共需要对{}列维度进行重新编码'.format(len(feature)))
     for i in feature:
-        Size_count = pd.DataFrame(data.groupby(i).size().sort_values(ascending=False), columns=['cnt'])  # 列分类统计
+        Size_count = pd.DataFrame(train.groupby(i).size().sort_values(ascending=False), columns=['cnt'])  # 列分类统计
         for j in range(len(Size_count)):
             data.loc[data[i] == Size_count.index[j], '{}'.format(i + '_New')] = j + 1
-            data = data.drop([i], axis=1)
-            feature_new.append(i + '_New')
+        data = data.drop([i], axis=1)
+        feature_new.append(i + '_New')
     data = data.fillna(0)
     print('编码完成')
     return data, feature_new
+
 #--------------------------------------------主程序区------------------------------------------------------#
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 train = Fix_Missing(train)
 
 label = 'flag'
 cat_feature, train = Data_Var_Convert(train, label)
+
 train, cat_feature = Recoding_Cat_Data(train, cat_feature)
 
-
+# 连续变量转化float
 obname = list(train.select_dtypes(include=["object"]).columns)
 for col in obname:
     train[col] = train[col].astype(np.float)
+# 分类变量转化int
+for col in cat_feature:
+    train[col] = train[col].astype(np.int)
 
 
 
