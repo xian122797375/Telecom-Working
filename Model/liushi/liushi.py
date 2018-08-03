@@ -327,23 +327,51 @@ def Data_Var_Convert(input_data, label):
     return categorical_feature, new_train
 
 
+def Recoding_Cat_Data(data, feature):
+    '''对分类变量进行重新编码'''
+    feature_new = list()
+    print('共需要对{}列维度进行重新编码'.format(len(feature)))
+    for i in feature:
+        Size_count = pd.DataFrame(data.groupby(i).size().sort_values(ascending=False), columns=['cnt'])  # 列分类统计
+        for j in range(len(Size_count)):
+            data.loc[data[i] == Size_count.index[j], '{}'.format(i + '_New')] = j + 1
+            data = data.drop([i], axis=1)
+            feature_new.append(i + '_New')
+    data = data.fillna(0)
+    print('编码完成')
+    return data, feature_new
 #--------------------------------------------主程序区------------------------------------------------------#
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 train = Fix_Missing(train)
 
 label = 'flag'
-cat_feature,train = Data_Var_Convert(train,label)
-
-
-
+cat_feature, train = Data_Var_Convert(train, label)
+train, cat_feature = Recoding_Cat_Data(train, cat_feature)
 
 
 obname = list(train.select_dtypes(include=["object"]).columns)
-train_columns = list(train.columns)
+for col in obname:
+    train[col] = train[col].astype(np.float)
 
-for i in obname:
-    pd.to_numeric(data[i], errors='coerce').fillna(0)    #ignore  coerce
 
+
+Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt']) #列分类统计
+Size_sum = 0 #存储累计列和
+Category = list() #存所剩种类
+for i in range(len(Size_count)):
+    print(i)
+    Col_Sum = Size_count.cnt.sum(axis=0)
+    if Size_sum / Col_Sum < 0.8:
+        Size_sum = Size_count.iloc[i,0] + Size_sum
+        Category.append(Size_count.index[i])
+    else:
+        break
+print(Category)
+
+for i in range(len(Category)):
+    print (i)
+    train.loc[train['Accs_Grade'] == Category[i] , 'New_Accs_Grade']  = i + 1
+train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
 
 
 # for col in obname:
