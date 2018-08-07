@@ -1,0 +1,31 @@
+sel     t0.latn_id         
+    ,t.area_code         
+  ,count(distinct case when  t0.fz_flag='A0'  then  t0.serv_id end )         
+      ,count(distinct case when  t0.fz_flag='A1'  then  t0.serv_id end )         
+  ,count(distinct case when  t0.fz_flag='A2' then t0.serv_id end )        
+  ,count(distinct case when  t0.fz_flag='A3' then t0.serv_id end )       
+from (         
+ select c.serv_id,c.lan_id as latn_id,c.tag9 as fz_flag  from pv_mart_z.INT_SENCE_LIST c where Sence_Code='100010150003' and Batch_Id='20180700143900'   
+)t0         
+         left join  (         
+  sel  latn_id1 as latn_id ,latn_name,area_code        
+ from PV_MART_Z.DMN_SMALL_CLCT_BUREAU_NEW t1         
+ group by 1,2,3 ) t           
+on t0.latn_id=t.latn_id         
+         
+where t0.serv_id in --统计一个月的发展量         
+(select prd_inst_id from PV_MART_Z.APP_PROM_NO_LIMIT_DAY where  Data_Id=1 and Prom_Id in (1,2) and Date_Id between 20180701 and 20180731           
+union          
+select prd_inst_id from  PV_MART_Z.BAS_PRD_COMB_PROM_HIST          
+where  to_char(Start_Date,'yyyymmdd') between '20180701' and '20180731'         
+and PRD_PROM_STAT_ID=10 and Cde_Prom_Id    in          
+(SELECT combo_id FROM   pv_data_z.Pty_Combo WHERE combo_name like '%语音不限量自主版套餐%')  )         
+         
+ and t0.serv_id in --必须是融合账户         
+(SELECT Prd_Inst_Id FROM pv_mart_z.bas_prd_inst_month           
+where billing_cycle_id=201806 and Std_Prd_Inst_Stat_Id/10<>12 and  substr(trim(std_prd_id),1,6)=101510        
+and acct_id in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month           
+where billing_cycle_id=201806 and Std_Prd_Inst_Stat_Id/10<>12 and substr(trim(std_prd_id),1,4)=3020) )        
+         
+    group by 1,2       
+       order by t.area_code   ;  
