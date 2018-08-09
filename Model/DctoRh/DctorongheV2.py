@@ -284,9 +284,9 @@ from sklearn.externals import joblib
 # train_data = lgb.Dataset(data, label=label, feature_name=['c1', 'c2', 'c3'], categorical_feature=['c3'])
 #----------------------------------------------参数区------------------------------------------------------#
 # categorical_feature = [] #自定义初始分类变量
-chunk_size = 20000
-data_cnt = 300000
-train_path = 'F:/01train.txt'
+chunk_size = 200000
+data_cnt = 7000000
+train_path = 'F:/03train_dc.txt'
 
 #----------------------------------------------功能区------------------------------------------------------#
 def chunk_read_data(file_path, chunk_size, data_cnt):
@@ -347,36 +347,56 @@ def Recoding_Cat_Data(data, feature):
 #--------------------------------------------主程序区------------------------------------------------------#
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 train = Fix_Missing(train)
-print(train.head(5))
+
+'''设置门槛'''
+new_data = train[(train['inv_bill_amt1'] > 40) & (train['total_flux1'] > 1000)]
+# print(new_data.shape)
+
+count1 = new_data[new_data['LABEL_3'] == 'T'].shape[0]
+count2 = train[train['LABEL_3'] == 'F'].shape[0]
+print(count1,count2)
+
+
+def RematchingDate(train,bit):
+    count = train[train['LABEL_3'] == 'T'].shape[0]
+    data = train[train['LABEL_3'] == 'F'].iloc[:count * bit,:]
+    new_data_train = pd.concat([train[train['LABEL_3'] == 'T'], data], axis=0)
+    return new_data_train
+
+
+train = RematchingDate(new_data,1)
+
+
 Id = train['Prd_Inst_Id']
 train_x = train.iloc[:,2:]
 train_y = train['LABEL_3']
 
 
 drop_var = 'LABEL_2'
-train_x.drop([drop_var], axis=1)
+train_x = train_x.drop([drop_var], axis=1)
+train_x = train_x.drop(['Exp_Date'], axis=1)
 label = 'LABEL_3'
 cat_feature, train_x = Data_Var_Convert(train_x, label)
 print(train_x.head(5))
 
 train_x, cat_feature = Recoding_Cat_Data(train_x, cat_feature)
 
-#先处理时间变量
-Data_Var = 'Exp_Date'
-New_Data_Var = '{}'.format(Data_Var + '_New')
-month_var = 1
-original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
-
-for i in range(len(train_x)):
-    # print(i)
-    tm = train_x[Data_Var][i]
-    if tm != 0:
-        train_x.loc[i, New_Data_Var] = (
-        datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
-train_x.fillna(0)
-train_x = train_x.drop([Data_Var], axis=1)
-
-train_x.to_csv('F:/rh_01_result.csv')
+# #先处理时间变量
+# Data_Var = 'Exp_Date'
+# New_Data_Var = '{}'.format(Data_Var + '_New')
+# month_var = 1
+# original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
+#
+# for i in range(len(train_x)):
+#     # print(i)
+#     tm = train_x[Data_Var][i]
+#     if tm != 0:
+#         train_x.loc[i, New_Data_Var] = (
+#         datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
+# train_x.fillna(0)
+# train_x = train_x.drop([Data_Var], axis=1)
+#
+# train_x.to_csv('F:/dc_01_result.csv')
 # 连续变量转化float
 obname = list(train_x.select_dtypes(include=["object"]).columns)
 for col in obname:
@@ -385,8 +405,8 @@ for col in obname:
 for col in cat_feature:
     train_x[col] = train_x[col].astype(np.int)
 
-train_y.replace('T','1')
-train_y.replace('F','0')
+train_y = train_y.replace('T','1')
+train_y = train_y.replace('F','0')
 print (train_x.head(5),train_x.shape)
 print (train_y.head(5),train_y.shape)
 
@@ -410,7 +430,7 @@ test_report = metrics.classification_report(y_test, y_test_pred)
 print(train_report)
 print(test_report)
 
-model_path = 'F:/20180808_RZR.model'
+model_path = 'F:/20180809_dcZR.model'
 joblib.dump(clf, model_path)
 
 
@@ -418,39 +438,45 @@ joblib.dump(clf, model_path)
 lgb.plot_importance(clf, max_num_features=30)
 plt.title("Featurertances")
 plt.show()
-#--------------------------------------------测试集数据读取---------------------------------------------#
-test_path = 'F:/05test.txt'
+#--------------------------------------------验证集数据读取---------------------------------------------#
+test_path = 'F:/05test_dc.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
+# test = test[(test['inv_bill_amt1'] > 60) & (test['total_flux1'] > 2000)]
+
+
 test = Fix_Missing(test)
+
+
 print(test.head(5))
 Id = test['Prd_Inst_Id']
 test_x = test.iloc[:,2:]
-test_y = test['LABEL_2']
+test_y = test['LABEL_3']
 
 
 
-drop_var = 'LABEL_3'
-test_x.drop([drop_var], axis=1)
-label = 'LABEL_2'
+drop_var = 'LABEL_2'
+test_x =test_x.drop([drop_var], axis=1)
+test_x =test_x.drop(['Exp_Date'], axis=1)
+label = 'LABEL_3'
 cat_feature, test_x = Data_Var_Convert(test_x, label)
 print(test_x.head(5))
 
 test_x, cat_feature = Recoding_Cat_Data(test_x, cat_feature)
 
 #先处理时间变量
-Data_Var = 'Exp_Date'
-New_Data_Var = '{}'.format(Data_Var + '_New')
-month_var = 1
-original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
-
-for i in range(len(test_x)):
-    # print(i)
-    tm = test_x[Data_Var][i]
-    if tm != 0:
-        test_x.loc[i, New_Data_Var] = (
-        datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
-test_x = test_x.fillna(0)
-test_x = test_x.drop([Data_Var], axis=1)
+# Data_Var = 'Exp_Date'
+# New_Data_Var = '{}'.format(Data_Var + '_New')
+# month_var = 1
+# original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
+#
+# for i in range(len(test_x)):
+#     # print(i)
+#     tm = test_x[Data_Var][i]
+#     if tm != 0:
+#         test_x.loc[i, New_Data_Var] = (
+#         datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
+# test_x = test_x.fillna(0)
+# test_x = test_x.drop([Data_Var], axis=1)
 
 
 # 连续变量转化float
@@ -461,13 +487,13 @@ for col in obname:
 for col in cat_feature:
     test_x[col] = test_x[col].astype(np.int)
 
-test_x = test_x.drop(['LABEL_3_New'], axis=1)
+# test_x = test_x.drop(['LABEL_3_New'], axis=1)
 
 test_y = test_y.replace('T','1')
 test_y = test_y.replace('F','0')
 print (test_x.head(5),test_x.shape)
 print (test_y.head(5),test_y.shape)
-#--------------------------------------------测试集数据测试---------------------------------------------#
+#--------------------------------------------验证集数据测试---------------------------------------------#
 model_path = 'F:/20180808_RZR.model'
 clf = joblib.load(model_path)
 
@@ -476,12 +502,79 @@ test_report = metrics.classification_report(test_y, y_test_pred)
 print(test_report)
 
 # precision    recall  f1-score   support
-# F       0.95      0.98      0.96    257029
-# T       0.22      0.11      0.14     14416
+# 0       0.99      0.79      0.88    233252
+# 1       0.03      0.40      0.05      3269
+
+
+#--------------------------------------------测试集数据读取---------------------------------------------#
+test_path = 'F:/07test_dc.txt'
+test = chunk_read_data(test_path, chunk_size, data_cnt)
+# test = test[(test['inv_bill_amt1'] > 60) & (test['total_flux1'] > 2000)]
+
+
+test = Fix_Missing(test)
+
+
+print(test.head(5))
+Id = test['Prd_Inst_Id']
+test_x = test.iloc[:,2:]
+test_y = test['LABEL_3']
 
 
 
-#--------------------------------------------调参------------------------------------------------------#
+drop_var = 'LABEL_2'
+test_x =test_x.drop([drop_var], axis=1)
+test_x =test_x.drop(['Exp_Date'], axis=1)
+label = 'LABEL_3'
+cat_feature, test_x = Data_Var_Convert(test_x, label)
+print(test_x.head(5))
+
+test_x, cat_feature = Recoding_Cat_Data(test_x, cat_feature)
+
+#先处理时间变量
+# Data_Var = 'Exp_Date'
+# New_Data_Var = '{}'.format(Data_Var + '_New')
+# month_var = 1
+# original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
+#
+# for i in range(len(test_x)):
+#     # print(i)
+#     tm = test_x[Data_Var][i]
+#     if tm != 0:
+#         test_x.loc[i, New_Data_Var] = (
+#         datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
+# test_x = test_x.fillna(0)
+# test_x = test_x.drop([Data_Var], axis=1)
+
+
+# 连续变量转化float
+obname = list(test_x.select_dtypes(include=["object"]).columns)
+for col in obname:
+    test_x[col] = test_x[col].astype(np.float)
+# 分类变量转化int
+for col in cat_feature:
+    test_x[col] = test_x[col].astype(np.int)
+
+# test_x = test_x.drop(['LABEL_3_New'], axis=1)
+
+
+test_y = test_y.replace('T','1')
+test_y = test_y.replace('F','0')
+print (test_x.head(5),test_x.shape)
+print (test_y.head(5),test_y.shape)
+
+y_train_pred = clf.predict(test_x)
+y_train_pred = pd.DataFrame(y_train_pred , columns=['flag'])
+
+prd_inst_id = Id
+result = pd.concat([prd_inst_id, y_train_pred], axis=1)
+result = result[result.flag == '1']
+print(result)
+result2 = result.iloc[:,0]
+result2.to_csv('F:/dc_03to07_result.csv',index=False)
+
+
+#--------------------------------------------调参(待优化)------------------------------------------------------#
 from sklearn.model_selection import GridSearchCV
 
 model_lgb = lgb.LGBMRegressor(objective='regression', num_leaves=50,
