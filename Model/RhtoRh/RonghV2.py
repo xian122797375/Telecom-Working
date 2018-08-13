@@ -346,6 +346,18 @@ def Recoding_Cat_Data(data, feature):
 
 #--------------------------------------------主程序区------------------------------------------------------#
 train = chunk_read_data(train_path, chunk_size, data_cnt)
+
+
+def RematchingDate(train,bit):
+    count = train[train['LABEL_3'] == 'T'].shape[0]
+    data = train[train['LABEL_3'] == 'F'].iloc[:count * bit,:]
+    new_data_train = pd.concat([train[train['LABEL_3'] == 'T'], data], axis=0)
+    return new_data_train
+
+
+train = RematchingDate(train,1)
+
+
 train = Fix_Missing(train)
 print(train.head(5))
 Id = train['Prd_Inst_Id']
@@ -354,27 +366,28 @@ train_y = train['LABEL_3']
 
 
 drop_var = 'LABEL_2'
-train_x.drop([drop_var], axis=1)
+train_x = train_x.drop([drop_var], axis=1)
+train_x = train_x.drop(['Exp_Date'], axis=1)
 label = 'LABEL_3'
 cat_feature, train_x = Data_Var_Convert(train_x, label)
 print(train_x.head(5))
 
 train_x, cat_feature = Recoding_Cat_Data(train_x, cat_feature)
 
-#先处理时间变量
-Data_Var = 'Exp_Date'
-New_Data_Var = '{}'.format(Data_Var + '_New')
-month_var = 1
-original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
-
-for i in range(len(train_x)):
-    # print(i)
-    tm = train_x[Data_Var][i]
-    if tm != 0:
-        train_x.loc[i, New_Data_Var] = (
-        datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
-train_x.fillna(0)
-train_x = train_x.drop([Data_Var], axis=1)
+# #先处理时间变量
+# Data_Var = 'Exp_Date'
+# New_Data_Var = '{}'.format(Data_Var + '_New')
+# month_var = 1
+# original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
+#
+# for i in range(len(train_x)):
+#     # print(i)
+#     tm = train_x[Data_Var][i]
+#     if tm != 0:
+#         train_x.loc[i, New_Data_Var] = (
+#         datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
+# train_x.fillna(0)
+# train_x = train_x.drop([Data_Var], axis=1)
 
 train_x.to_csv('F:/rh_01_result.csv')
 # 连续变量转化float
@@ -385,8 +398,8 @@ for col in obname:
 for col in cat_feature:
     train_x[col] = train_x[col].astype(np.int)
 
-train_y.replace('T','1')
-train_y.replace('F','0')
+train_y = train_y.replace('T','1')
+train_y = train_y.replace('F','0')
 print (train_x.head(5),train_x.shape)
 print (train_y.head(5),train_y.shape)
 
@@ -419,7 +432,7 @@ lgb.plot_importance(clf, max_num_features=30)
 plt.title("Featurertances")
 plt.show()
 #--------------------------------------------测试集数据读取---------------------------------------------#
-test_path = 'F:/05test.txt'
+test_path = 'F:/07test.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 test = Fix_Missing(test)
 print(test.head(5))
@@ -427,30 +440,29 @@ Id = test['Prd_Inst_Id']
 test_x = test.iloc[:,2:]
 test_y = test['LABEL_2']
 
-
-
 drop_var = 'LABEL_3'
-test_x.drop([drop_var], axis=1)
+test_x = test_x.drop([drop_var], axis=1)
+test_x = test_x.drop(['Exp_Date'], axis=1)
 label = 'LABEL_2'
 cat_feature, test_x = Data_Var_Convert(test_x, label)
 print(test_x.head(5))
 
 test_x, cat_feature = Recoding_Cat_Data(test_x, cat_feature)
 
-#先处理时间变量
-Data_Var = 'Exp_Date'
-New_Data_Var = '{}'.format(Data_Var + '_New')
-month_var = 1
-original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
+# #先处理时间变量
+# Data_Var = 'Exp_Date'
+# New_Data_Var = '{}'.format(Data_Var + '_New')
+# month_var = 1
+# original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
 
-for i in range(len(test_x)):
-    # print(i)
-    tm = test_x[Data_Var][i]
-    if tm != 0:
-        test_x.loc[i, New_Data_Var] = (
-        datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
-test_x = test_x.fillna(0)
-test_x = test_x.drop([Data_Var], axis=1)
+# for i in range(len(test_x)):
+#     # print(i)
+#     tm = test_x[Data_Var][i]
+#     if tm != 0:
+#         test_x.loc[i, New_Data_Var] = (
+#         datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
+# test_x = test_x.fillna(0)
+# test_x = test_x.drop([Data_Var], axis=1)
 
 
 # 连续变量转化float
@@ -474,6 +486,17 @@ clf = joblib.load(model_path)
 y_test_pred = clf.predict(test_x)
 test_report = metrics.classification_report(test_y, y_test_pred)
 print(test_report)
+
+
+y_test_pred = clf.predict(test_x)
+y_test_pred = pd.DataFrame(y_test_pred , columns=['flag'])
+
+prd_inst_id = Id
+result = pd.concat([prd_inst_id, y_test_pred], axis=1)
+result = result[result.flag == '1']
+print(result)
+result2 = result.iloc[:,0]
+result2.to_csv('F:/rh_03to07rhtorh_result.csv',index=False)
 
 # precision    recall  f1-score   support
 # F       0.95      0.98      0.96    257029
