@@ -1,0 +1,30 @@
+create table td_work.zicai_3to4_20180814 as (
+sel a.prd_inst_id from
+(SELECT prd_inst_id FROM PV_DATA_Z.TMP_YUANLEI_ZC201803_XX
+WHERE latn_id not in (1004,1006) AND fz_flag = '1') a 
+inner join 
+ (sel * from PV_MART_Z.BAS_MOB_TERM_STR_MONTH 
+ where billing_cycle_id between 201805 and 201807
+ and tdd_flux > 0) b --预计转化率10%
+on a.prd_inst_id = b.prd_inst_id
+inner join 
+( SELECT Prd_Inst_Id 
+ FROM pv_mart_z.bas_mob_term_str_month a 
+ inner join 
+( select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='F' ) b 
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where Std_Prd_Inst_Stat_Id/10<>12 and billing_cycle_id=201807 ) T5 
+ ON a.prd_inst_id=t5.Prd_Inst_Id)with data;
+
+
+inner join (SELECT Prd_Inst_Id 
+FROM pv_mart_z.bas_mob_term_str_cur a 
+ inner join 
+ ( select terminal_code 
+ from pv_mart_z.PRD_TMN_USG_TYPE 
+ where is4G_flag ='T' ) b 
+on upper(trim(a.register_term_code))=upper(trim(b.terminal_code)) 
+ where Std_Prd_Inst_Stat_Id/10<>12 )c
+ on a.prd_inst_id=c.Prd_Inst_Id
