@@ -284,6 +284,7 @@ from sklearn.externals import joblib
 # train_data = lgb.Dataset(data, label=label, feature_name=['c1', 'c2', 'c3'], categorical_feature=['c3'])
 #----------------------------------------------参数区------------------------------------------------------#
 # categorical_feature = [] #自定义初始分类变量
+
 chunk_size = 20000
 data_cnt = 300000
 train_path = 'F:/01train.txt'
@@ -347,13 +348,11 @@ def Recoding_Cat_Data(data, feature):
 #--------------------------------------------主程序区------------------------------------------------------#
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 
-
 def RematchingDate(train,bit):
     count = train[train['LABEL_3'] == 'T'].shape[0]
     data = train[train['LABEL_3'] == 'F'].iloc[:count * bit,:]
     new_data_train = pd.concat([train[train['LABEL_3'] == 'T'], data], axis=0)
     return new_data_train
-
 
 train = RematchingDate(train,1)
 
