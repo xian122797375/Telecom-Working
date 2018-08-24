@@ -287,7 +287,7 @@ from sklearn.externals import joblib
 
 chunk_size = 20000
 data_cnt = 300000
-train_path = 'F:/01train.txt'
+train_path = 'F:/111.txt'
 
 #----------------------------------------------功能区------------------------------------------------------#
 def chunk_read_data(file_path, chunk_size, data_cnt):
