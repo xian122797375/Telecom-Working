@@ -1,4 +1,4 @@
-'''2018-8-6资采 不限量迁转 融合转融合模型'''
+'''2018-9-12资采 不限量迁转 单k转不限量模型'''
 import lightgbm as lgb
 import pandas as pd
 # import xgboost as xgb
@@ -287,12 +287,12 @@ from sklearn.externals import joblib
 
 chunk_size = 200000
 data_cnt = 4000000
-train_path = 'F:/06train_rh.txt'
+train_path = 'F:/06train_dk_torh.txt'
 
 #----------------------------------------------功能区------------------------------------------------------#
 def chunk_read_data(file_path, chunk_size, data_cnt):
     '''文件批量读取'''
-    data = pd.read_csv(file_path, sep=',', header=0, iterator=True, chunksize=chunk_size, low_memory=False ,encoding='gb2312')
+    data = pd.read_csv(file_path, sep='|', header=0, iterator=True, chunksize=chunk_size, low_memory=False ,encoding='gb2312')
     train = data.get_chunk(data_cnt)
     print('文件读取完毕,总计{}条'.format(train.shape[0]))
     return train
@@ -365,7 +365,7 @@ train = train.iloc[:,2:]
 # train_y = train['label_3']
 
 #--------------------------------------------读取测试数据-----------------------
-test_path = 'F:/07test_rh.txt'
+test_path = 'F:/07train_dk_torh.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 # test = Fix_Missing(test)
 # print(test.head(5))
@@ -373,7 +373,7 @@ test = chunk_read_data(test_path, chunk_size, data_cnt)
 test = test.iloc[:,2:]
 # test_y = test['LABEL_2']
 #--------------------------------------------读取最新数据-----------------------
-new_test_path = 'F:/08test_rh.txt'
+new_test_path = 'F:/08train_dk_torh.txt'
 new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
 Prd_Inst_Id = new_test.iloc[:,0]
 new_test = new_test.iloc[:,2:]
@@ -386,7 +386,8 @@ train_test_data = pd.concat([train, test, new_test], axis=0)
 train_test_data = Fix_Missing(train_test_data)
 
 # drop_var = 'Exp_Date','LABEL_1','LABEL_2','LABEL_3'
-train_test_data = train_test_data.drop(['Exp_Date','LABEL_1','LABEL_2','LABEL_3'], axis=1)
+train_test_data = train_test_data.drop(['Line_Rate.1','Accs_Nbr','Ofr_Name','LABEL_1','LABEL_2','LABEL_3'], axis=1)
+# train_test_data = train_test_data.drop(['Line_Rate'], axis=1)
 
 # train_x = train_x.drop(['Exp_Date'], axis=1)
 # label = ''
@@ -463,7 +464,7 @@ clf = lgb.LGBMClassifier(
     subsample=0.7, colsample_bytree=0.7, subsample_freq=1,
     learning_rate=0.05, min_child_weight=50, random_state=2018, n_jobs=-1
 )
-clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
+clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=400)
 # clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
 
 y_train_pred = clf.predict(x_train)
@@ -477,7 +478,7 @@ test_y_pred = clf.predict(test_x)
 test_y_report = metrics.classification_report(test_y, test_y_pred)
 print(test_y_report)
 
-model_path = 'F:/20180910_RZR.model'
+model_path = 'F:/20180910_DZR.model'
 joblib.dump(clf, model_path)
 
 y_new_test_pred = clf.predict_proba(new_test_x)
@@ -485,10 +486,10 @@ y_new_test_pred = pd.DataFrame(y_new_test_pred ,columns=['zero_prob','one_prob']
 
 prd_inst_id = Prd_Inst_Id
 result = pd.concat([prd_inst_id, y_new_test_pred.one_prob], axis=1)
-result = result[result.one_prob >= 0.5]
+# result = result[result.one_prob >= 0.5]
 print(result)
 # result2 = result.iloc[:,0]
-result.to_csv('F:/rh_05to07rhtorh_result.csv',index=False)
+result.to_csv('F:/rh_05to07dktorh_result.csv',index=False)
 
 
 

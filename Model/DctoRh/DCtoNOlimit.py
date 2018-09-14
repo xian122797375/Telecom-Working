@@ -1,4 +1,4 @@
-'''2018-8-6资采 不限量迁转 融合转融合模型'''
+'''2018-9-12资采 不限量迁转 单c转不限量模型'''
 import lightgbm as lgb
 import pandas as pd
 # import xgboost as xgb
@@ -287,7 +287,7 @@ from sklearn.externals import joblib
 
 chunk_size = 200000
 data_cnt = 4000000
-train_path = 'F:/06train_rh.txt'
+train_path = 'F:/06train_dc_torh.txt'
 
 #----------------------------------------------功能区------------------------------------------------------#
 def chunk_read_data(file_path, chunk_size, data_cnt):
@@ -365,7 +365,7 @@ train = train.iloc[:,2:]
 # train_y = train['label_3']
 
 #--------------------------------------------读取测试数据-----------------------
-test_path = 'F:/07test_rh.txt'
+test_path = 'F:/07train_dc_torh.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 # test = Fix_Missing(test)
 # print(test.head(5))
@@ -373,7 +373,7 @@ test = chunk_read_data(test_path, chunk_size, data_cnt)
 test = test.iloc[:,2:]
 # test_y = test['LABEL_2']
 #--------------------------------------------读取最新数据-----------------------
-new_test_path = 'F:/08test_rh.txt'
+new_test_path = 'F:/08train_dc_torh.txt'
 new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
 Prd_Inst_Id = new_test.iloc[:,0]
 new_test = new_test.iloc[:,2:]
@@ -463,7 +463,7 @@ clf = lgb.LGBMClassifier(
     subsample=0.7, colsample_bytree=0.7, subsample_freq=1,
     learning_rate=0.05, min_child_weight=50, random_state=2018, n_jobs=-1
 )
-clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
+clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=400)
 # clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
 
 y_train_pred = clf.predict(x_train)
@@ -477,7 +477,7 @@ test_y_pred = clf.predict(test_x)
 test_y_report = metrics.classification_report(test_y, test_y_pred)
 print(test_y_report)
 
-model_path = 'F:/20180910_RZR.model'
+model_path = 'F:/20180910_DZR.model'
 joblib.dump(clf, model_path)
 
 y_new_test_pred = clf.predict_proba(new_test_x)
@@ -488,7 +488,7 @@ result = pd.concat([prd_inst_id, y_new_test_pred.one_prob], axis=1)
 result = result[result.one_prob >= 0.5]
 print(result)
 # result2 = result.iloc[:,0]
-result.to_csv('F:/rh_05to07rhtorh_result.csv',index=False)
+result.to_csv('F:/rh_05to07dctorh2_result.csv',index=False)
 
 
 
