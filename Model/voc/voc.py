@@ -277,6 +277,3 @@ result = pd.concat([prd_inst_id, y_new_test_pred.one_prob], axis=1)
 print(result)
 # result2 = result.iloc[:,0]
 result.to_csv('rh_09to11voc_result_1bi3.csv',index=False)
-result.to_csv('rh_09to11voc_result_1bi3.csv',index=False)
-
-sss
