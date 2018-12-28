@@ -287,12 +287,12 @@ from sklearn.externals import joblib
 
 chunk_size = 200000
 data_cnt = 4000000
-train_path = 'F:/06train_rh.txt'
+train_path = 'F:/07train_rh.txt'
 
 #----------------------------------------------功能区------------------------------------------------------#
 def chunk_read_data(file_path, chunk_size, data_cnt):
     '''文件批量读取'''
-    data = pd.read_csv(file_path, sep=',', header=0, iterator=True, chunksize=chunk_size, low_memory=False ,encoding='gb2312')
+    data = pd.read_csv(file_path, sep='	', header=0, iterator=True, chunksize=chunk_size, low_memory=False ,encoding='gb2312')
     train = data.get_chunk(data_cnt)
     print('文件读取完毕,总计{}条'.format(train.shape[0]))
     return train
@@ -356,6 +356,7 @@ train = chunk_read_data(train_path, chunk_size, data_cnt)
 # train = RematchingDate(train,1)
 # Id = train['Prd_Inst_Id']
 train = train.iloc[:,2:]
+print(train.shape)
 # train_y = train['LABEL_2']
 
 # train = Fix_Missing(train)
@@ -365,18 +366,20 @@ train = train.iloc[:,2:]
 # train_y = train['label_3']
 
 #--------------------------------------------读取测试数据-----------------------
-test_path = 'F:/07test_rh.txt'
+test_path = 'F:/08test_rh.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 # test = Fix_Missing(test)
 # print(test.head(5))
 # Id = test['Prd_Inst_Id']
 test = test.iloc[:,2:]
+print(test.shape)
 # test_y = test['LABEL_2']
 #--------------------------------------------读取最新数据-----------------------
-new_test_path = 'F:/08test_rh.txt'
+new_test_path = 'F:/09test_rh.txt'
 new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
 Prd_Inst_Id = new_test.iloc[:,0]
 new_test = new_test.iloc[:,2:]
+print(new_test.shape)
 
 #--------------------------数据合并-----------------------
 train = RematchingDate(train,1)
@@ -406,7 +409,7 @@ test_x = pd.DataFrame(test_x)
 new_test_x = pd.DataFrame(new_test_x)
 
 train_y = train['LABEL_3']
-test_y = test['LABEL_2']
+test_y = test['LABEL_3']
 
 # #先处理时间变量
 # Data_Var = 'Exp_Date'
@@ -477,7 +480,7 @@ test_y_pred = clf.predict(test_x)
 test_y_report = metrics.classification_report(test_y, test_y_pred)
 print(test_y_report)
 
-model_path = 'F:/20180910_RZR.model'
+model_path = 'F:/201801009_RZR.model'
 joblib.dump(clf, model_path)
 
 y_new_test_pred = clf.predict_proba(new_test_x)
@@ -485,10 +488,10 @@ y_new_test_pred = pd.DataFrame(y_new_test_pred ,columns=['zero_prob','one_prob']
 
 prd_inst_id = Prd_Inst_Id
 result = pd.concat([prd_inst_id, y_new_test_pred.one_prob], axis=1)
-result = result[result.one_prob >= 0.5]
+# result = result[result.one_prob >= 0.5]
 print(result)
 # result2 = result.iloc[:,0]
-result.to_csv('F:/rh_05to07rhtorh_result.csv',index=False)
+result.to_csv('F:/rh_07to10rhtorh_result.csv',index=False)
 
 
 
@@ -501,189 +504,189 @@ plt.show()
 
 
 #--------------------------------------------测试集数据读取---------------------------------------------#
-test_path = 'F:/08test_rh.txt'
-test = chunk_read_data(test_path, chunk_size, data_cnt)
-test = Fix_Missing(test)
-print(test.head(5))
-Id = test['Prd_Inst_Id']
-test_x = test.iloc[:,2:]
-test_y = test['LABEL_2']
-
-drop_var = 'LABEL_3'
-test_x = test_x.drop([drop_var], axis=1)
-# test_x = test_x.drop(['Exp_Date'], axis=1)
-label = 'LABEL_2'
-cat_feature, test_x = Data_Var_Convert(test_x, label)
-print(test_x.head(5))
-
-test_x, cat_feature = Recoding_Cat_Data(test_x, cat_feature)
-
-#先处理时间变量
-Data_Var = 'Exp_Date'
-New_Data_Var = '{}'.format(Data_Var + '_New')
-month_var = 1
-original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
-
-for i in range(len(test_x)):
-    # print(i)
-    tm = test_x[Data_Var][i]
-    if tm != 0:
-        test_x.loc[i, New_Data_Var] = (
-        datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
-test_x = test_x.fillna(0)
-test_x = test_x.drop([Data_Var], axis=1)
-
-
-# 连续变量转化float
-obname = list(test_x.select_dtypes(include=["object"]).columns)
-for col in obname:
-    test_x[col] = test_x[col].astype(np.float)
-# 分类变量转化int
-for col in cat_feature:
-    test_x[col] = test_x[col].astype(np.int)
-
-test_x = test_x.drop(['LABEL_3_New'], axis=1)
-
-test_y = test_y.replace('T','1')
-test_y = test_y.replace('F','0')
-print (test_x.head(5),test_x.shape)
-print (test_y.head(5),test_y.shape)
-#--------------------------------------------测试集数据测试---------------------------------------------#
-model_path = 'F:/20180808_RZR.model'
-clf = joblib.load(model_path)
-
-y_test_pred = clf.predict(test_x)
-test_report = metrics.classification_report(test_y, y_test_pred)
-print(test_report)
-
-
-y_test_pred = clf.predict(test_x)
-y_test_pred = pd.DataFrame(y_test_pred , columns=['flag'])
-
-prd_inst_id = Id
-result = pd.concat([prd_inst_id, y_test_pred], axis=1)
-result = result[result.flag == '1']
-print(result)
-result2 = result.iloc[:,0]
-result2.to_csv('F:/rh_03to07rhtorh_result.csv',index=False)
-
-# precision    recall  f1-score   support
-# F       0.95      0.98      0.96    257029
-# T       0.22      0.11      0.14     14416
-
-
-
-#--------------------------------------------调参------------------------------------------------------#
-from sklearn.model_selection import GridSearchCV
-
-model_lgb = lgb.LGBMRegressor(objective='regression', num_leaves=50,
-                              learning_rate=0.1, n_estimators=43, max_depth=6,
-                              metric='rmse', bagging_fraction=0.8, feature_fraction=0.8)
-
-params_test1 = {
-    'max_depth': range(3, 8, 2),
-    'num_leaves': range(50, 170, 30)
-}
-gsearch1 = GridSearchCV(estimator=model_lgb, param_grid=params_test1, scoring='neg_mean_squared_error', cv=5, verbose=1,
-                        n_jobs=4)
-
-gsearch1.fit(x_train, y_train)
-gsearch1.best_params_, gsearch1.best_score_
-#--------------------------------------------其他------------------------------------------------------#
-Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt']) #列分类统计
-Size_sum = 0 #存储累计列和
-Category = list() #存所剩种类
-for i in range(len(Size_count)):
-    print(i)
-    Col_Sum = Size_count.cnt.sum(axis=0)
-    if Size_sum / Col_Sum < 0.8:
-        Size_sum = Size_count.iloc[i,0] + Size_sum
-        Category.append(Size_count.index[i])
-    else:
-        break
-print(Category)
-
-for i in range(len(Category)):
-    print (i)
-    train.loc[train['Accs_Grade'] == Category[i] , 'New_Accs_Grade']  = i + 1
-train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
-
-
+# test_path = 'F:/08test_rh.txt'
+# test = chunk_read_data(test_path, chunk_size, data_cnt)
+# test = Fix_Missing(test)
+# print(test.head(5))
+# Id = test['Prd_Inst_Id']
+# test_x = test.iloc[:,2:]
+# test_y = test['LABEL_2']
+#
+# drop_var = 'LABEL_3'
+# test_x = test_x.drop([drop_var], axis=1)
+# # test_x = test_x.drop(['Exp_Date'], axis=1)
+# label = 'LABEL_2'
+# cat_feature, test_x = Data_Var_Convert(test_x, label)
+# print(test_x.head(5))
+#
+# test_x, cat_feature = Recoding_Cat_Data(test_x, cat_feature)
+#
+# #先处理时间变量
+# Data_Var = 'Exp_Date'
+# New_Data_Var = '{}'.format(Data_Var + '_New')
+# month_var = 1
+# original_date = datetime.datetime.strptime('2018/01/01', "%Y/%m/%d").replace(month=month_var,day=1)
+#
+# for i in range(len(test_x)):
+#     # print(i)
+#     tm = test_x[Data_Var][i]
+#     if tm != 0:
+#         test_x.loc[i, New_Data_Var] = (
+#         datetime.datetime.strptime(tm, "%Y/%m/%d") - original_date).days
+# test_x = test_x.fillna(0)
+# test_x = test_x.drop([Data_Var], axis=1)
+#
+#
+# # 连续变量转化float
+# obname = list(test_x.select_dtypes(include=["object"]).columns)
 # for col in obname:
-#     train[col] = train[col].astype(np.float)
-
-# A = pd.DataFrame(train['Accs_Grade'].value_counts())
-
-Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt']) #列分类统计
-Size_sum = 0 #存储累计列和
-Category = list() #存所剩种类
-for i in range(len(Size_count)):
-    print(i)
-    Col_Sum = Size_count.cnt.sum(axis=0)
-    if Size_sum / Col_Sum < 0.8:
-        Size_sum = Size_count.iloc[i,0] + Size_sum
-        Category.append(Size_count.index[i])
-    else:
-        break
-print(Category)
-
-for i in range(len(Category)):
-    print (i)
-    train.loc[train['Accs_Grade'] == Category[i] , 'New_Accs_Grade']  = i + 1
-train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
-
-
-
-
-
-
-
-train_y = data.flag
-train_x = data.drop(['flag','Ofr_Id','Unnamed: 0','Ofr_Id_last','Ofr_Id_last2'], axis=1)
-
-x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2)
-
-clf = lgb.LGBMClassifier(
-    boosting_type='gbdt', num_leaves=31, reg_alpha=0.0, reg_lambda=1,
-    max_depth=-1, n_estimators=500, objective='binary',
-    subsample=0.7, colsample_bytree=0.7, subsample_freq=1,
-    learning_rate=0.05, min_child_weight=50, random_state=2018, n_jobs=-1
-)
-clf.fit(x_train, y_train, eval_set=[(x_train, y_train)], eval_metric='auc', early_stopping_rounds=100)
-
-y_train_pred = clf.predict(train_x)
-y_train_pred = pd.DataFrame(y_train_pred)
-train_report = metrics.classification_report(train_y, y_train_pred)
-print(train_report)
-
-
-y_train_pred = clf.predict(x_train)
-y_test_pred = clf.predict(x_test)
-train_report = metrics.classification_report(y_train, y_train_pred)
-test_report = metrics.classification_report(y_test, y_test_pred)
-print(train_report)
-print(test_report)
-
-
-# importance = clf.feature_importance()
-
-
-plt.figure(figsize=(12,6))
-lgb.plot_importance(clf, max_num_features=30)
-plt.title("Featurertances")
-plt.show()
-#   precision    recall  f1-score   support
-#           0       0.99      1.00      0.99     97720
-#           1       0.87      0.49      0.62      2280
-# avg / total       0.99      0.99      0.98    100000
-
-
-#7-27训练和验证
-#              precision    recall  f1-score   support
-#           0       0.99      1.00      0.99    156356
-#           1       0.86      0.51      0.64      3644
-# avg / total       0.99      0.99      0.99    160000
-#              precision    recall  f1-score   support
-#           0       0.99      1.00      0.99     39131
-#           1       0.69      0.42      0.52       869
-# avg / total       0.98      0.98      0.98     40000
+#     test_x[col] = test_x[col].astype(np.float)
+# # 分类变量转化int
+# for col in cat_feature:
+#     test_x[col] = test_x[col].astype(np.int)
+#
+# test_x = test_x.drop(['LABEL_3_New'], axis=1)
+#
+# test_y = test_y.replace('T','1')
+# test_y = test_y.replace('F','0')
+# print (test_x.head(5),test_x.shape)
+# print (test_y.head(5),test_y.shape)
+# #--------------------------------------------测试集数据测试---------------------------------------------#
+# model_path = 'F:/20180808_RZR.model'
+# clf = joblib.load(model_path)
+#
+# y_test_pred = clf.predict(test_x)
+# test_report = metrics.classification_report(test_y, y_test_pred)
+# print(test_report)
+#
+#
+# y_test_pred = clf.predict(test_x)
+# y_test_pred = pd.DataFrame(y_test_pred , columns=['flag'])
+#
+# prd_inst_id = Id
+# result = pd.concat([prd_inst_id, y_test_pred], axis=1)
+# result = result[result.flag == '1']
+# print(result)
+# result2 = result.iloc[:,0]
+# result2.to_csv('F:/rh_03to07rhtorh_result.csv',index=False)
+#
+# # precision    recall  f1-score   support
+# # F       0.95      0.98      0.96    257029
+# # T       0.22      0.11      0.14     14416
+#
+#
+#
+# #--------------------------------------------调参------------------------------------------------------#
+# from sklearn.model_selection import GridSearchCV
+#
+# model_lgb = lgb.LGBMRegressor(objective='regression', num_leaves=50,
+#                               learning_rate=0.1, n_estimators=43, max_depth=6,
+#                               metric='rmse', bagging_fraction=0.8, feature_fraction=0.8)
+#
+# params_test1 = {
+#     'max_depth': range(3, 8, 2),
+#     'num_leaves': range(50, 170, 30)
+# }
+# gsearch1 = GridSearchCV(estimator=model_lgb, param_grid=params_test1, scoring='neg_mean_squared_error', cv=5, verbose=1,
+#                         n_jobs=4)
+#
+# gsearch1.fit(x_train, y_train)
+# gsearch1.best_params_, gsearch1.best_score_
+# #--------------------------------------------其他------------------------------------------------------#
+# Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt']) #列分类统计
+# Size_sum = 0 #存储累计列和
+# Category = list() #存所剩种类
+# for i in range(len(Size_count)):
+#     print(i)
+#     Col_Sum = Size_count.cnt.sum(axis=0)
+#     if Size_sum / Col_Sum < 0.8:
+#         Size_sum = Size_count.iloc[i,0] + Size_sum
+#         Category.append(Size_count.index[i])
+#     else:
+#         break
+# print(Category)
+#
+# for i in range(len(Category)):
+#     print (i)
+#     train.loc[train['Accs_Grade'] == Category[i] , 'New_Accs_Grade']  = i + 1
+# train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
+#
+#
+# # for col in obname:
+# #     train[col] = train[col].astype(np.float)
+#
+# # A = pd.DataFrame(train['Accs_Grade'].value_counts())
+#
+# Size_count = pd.DataFrame(train.groupby('Accs_Grade').size().sort_values(ascending = False),columns=['cnt']) #列分类统计
+# Size_sum = 0 #存储累计列和
+# Category = list() #存所剩种类
+# for i in range(len(Size_count)):
+#     print(i)
+#     Col_Sum = Size_count.cnt.sum(axis=0)
+#     if Size_sum / Col_Sum < 0.8:
+#         Size_sum = Size_count.iloc[i,0] + Size_sum
+#         Category.append(Size_count.index[i])
+#     else:
+#         break
+# print(Category)
+#
+# for i in range(len(Category)):
+#     print (i)
+#     train.loc[train['Accs_Grade'] == Category[i] , 'New_Accs_Grade']  = i + 1
+# train['New_Accs_Grade'] = train['New_Accs_Grade'].fillna(0)
+#
+#
+#
+#
+#
+#
+#
+# train_y = data.flag
+# train_x = data.drop(['flag','Ofr_Id','Unnamed: 0','Ofr_Id_last','Ofr_Id_last2'], axis=1)
+#
+# x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2)
+#
+# clf = lgb.LGBMClassifier(
+#     boosting_type='gbdt', num_leaves=31, reg_alpha=0.0, reg_lambda=1,
+#     max_depth=-1, n_estimators=500, objective='binary',
+#     subsample=0.7, colsample_bytree=0.7, subsample_freq=1,
+#     learning_rate=0.05, min_child_weight=50, random_state=2018, n_jobs=-1
+# )
+# clf.fit(x_train, y_train, eval_set=[(x_train, y_train)], eval_metric='auc', early_stopping_rounds=100)
+#
+# y_train_pred = clf.predict(train_x)
+# y_train_pred = pd.DataFrame(y_train_pred)
+# train_report = metrics.classification_report(train_y, y_train_pred)
+# print(train_report)
+#
+#
+# y_train_pred = clf.predict(x_train)
+# y_test_pred = clf.predict(x_test)
+# train_report = metrics.classification_report(y_train, y_train_pred)
+# test_report = metrics.classification_report(y_test, y_test_pred)
+# print(train_report)
+# print(test_report)
+#
+#
+# # importance = clf.feature_importance()
+#
+#
+# plt.figure(figsize=(12,6))
+# lgb.plot_importance(clf, max_num_features=30)
+# plt.title("Featurertances")
+# plt.show()
+# #   precision    recall  f1-score   support
+# #           0       0.99      1.00      0.99     97720
+# #           1       0.87      0.49      0.62      2280
+# # avg / total       0.99      0.99      0.98    100000
+#
+#
+# #7-27训练和验证
+# #              precision    recall  f1-score   support
+# #           0       0.99      1.00      0.99    156356
+# #           1       0.86      0.51      0.64      3644
+# # avg / total       0.99      0.99      0.99    160000
+# #              precision    recall  f1-score   support
+# #           0       0.99      1.00      0.99     39131
+# #           1       0.69      0.42      0.52       869
+# # avg / total       0.98      0.98      0.98     40000

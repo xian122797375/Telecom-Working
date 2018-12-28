@@ -1,20 +1,21 @@
-'''2018-8-6资采 不限量迁转 融合转融合模型'''
-import lightgbm as lgb
-import pandas as pd
-# import xgboost as xgb
-from matplotlib import pyplot as plt
-from sklearn import metrics
-from sklearn.model_selection import train_test_split
-import numpy as np
-import datetime
-from sklearn.externals import joblib
-
-combine_data = pd.DataFrame(data=dataframe3.iloc[-1, :].values, index=[int(x) for x in dataframe3.columns])
-target_columns1 = [101, 102, 103]
-target_data2 = combine_data.loc[target_columns1, :]
-mingdu_columns = target_data2.sort_values(0, ascending=False).index
-a = list()
-a.append(mingdu_columns)
-# mingdu_columns = [mingdu_columns]
-mingdulist = [101, 102, 103]
-rest_mingdu = list((set(mingdulist).union(set(mingdu_columns))) ^ (set(mingdulist) ^ set(mingdu_columns)))
+categorical_feature = []
+    # new_train = input_data.drop([label], axis=1)
+new_train = input_data
+for i in new_train.columns:
+    Category_Count = pd.DataFrame(train.groupby(i).size().sort_values(ascending=False), columns=['cnt'])  # 列分类统计
+    if len(Category_Count) == 1:
+        new_train = new_train.drop([i], axis=1)  # 删除唯一值
+    elif (len(Category_Count) < 30) & (len(Category_Count) > 1):
+        Category_Count_Top1 = Category_Count.iloc[0, 0]
+        Category_Count_sum = Category_Count.cnt.sum(axis=0)
+        Top1_Bit = Category_Count_Top1 / Category_Count_sum
+        if Top1_Bit >= 0.95:
+            new_train = new_train.drop([i], axis=1)  # 一个维度值占比较大剔除
+        elif (Top1_Bit >= 0.8) & (Top1_Bit < 0.95):
+            new_train.loc[new_train[i] != 0, i] = 1  # 大于0.8转化为哑变量
+            categorical_feature.append(i)  # 假定分类变量
+        else:
+            categorical_feature.append(i)  # 假定分类变量
+print('原始维度{}个,剔除后还剩下{}个'.format(input_data.shape[1], new_train.shape[1]))
+print('自动判断分类维度共计：{}个'.format(len(categorical_feature)))
+    return categorical_feature, new_train
