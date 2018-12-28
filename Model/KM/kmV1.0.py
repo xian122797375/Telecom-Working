@@ -1,0 +1,125 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+'''2018-'''
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import scale
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import scale
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
+import lightgbm as lgb
+
+path = 'F:/qiche1205.csv'
+
+
+def chunk_read_data(file_path,chunk_size,data_cnt):
+    '''文件批量读取'''
+    data = pd.read_csv(file_path,header=0,iterator=True,chunksize=chunk_size)
+    train = data.get_chunk(data_cnt)
+    train = train.fillna(0)
+    print('文件读取完毕,总计{}条'.format(train.shape[0]))
+    return train
+
+
+data = chunk_read_data(path, 10000, 20000)
+train = data.iloc[:,1:]
+
+#用15.16做了监督学习标签
+train.loc[(train.Q15 == 4 ) | (train.Q16 == 4) | (train.Q16 == 5), 'label'] = 1
+train.loc[(train.Q15 == 4 ) | (train.Q16 != 3) & (train.Q16 != 4) & (train.Q16 != 5), 'label'] = 2
+train_new = train.fillna(0)
+train_new = train_new.drop(['Q15','Q16'],axis=1)
+# train_new = train_new.drop(['Q16'],axis=1)
+
+data = scale(train_new) #中心标准化数据
+reduced_data =PCA(n_components=2).fit_transform(train_new)
+
+kmeans = KMeans(init='k-means++', n_clusters=3, n_init=10)
+kmeans.fit(reduced_data)
+
+
+h = .02
+x_min, x_max = reduced_data[:, 0].min() - 1, reduced_data[:, 0].max() + 1
+y_min, y_max = reduced_data[:, 1].min() - 1, reduced_data[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+
+Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
+
+label_pred = kmeans.labels_
+train_new['label_km'] = pd.DataFrame(label_pred)
+
+
+
+Z = Z.reshape(xx.shape)
+plt.figure(1)
+plt.clf()
+plt.imshow(Z, interpolation='nearest',
+           extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+           cmap=plt.cm.Paired,
+           aspect='auto', origin='lower')
+
+
+plt.plot(reduced_data[:, 0], reduced_data[:, 1], 'k.', markersize=2)
+# Plot the centroids as a white X
+centroids = kmeans.cluster_centers_
+plt.scatter(centroids[:, 0], centroids[:, 1],
+            marker='x', s=169, linewidths=3,
+            color='w', zorder=10)
+plt.title('K-means clustering on the digits dataset (PCA-reduced data)\n'
+          'Centroids are marked with white cross')
+plt.xlim(x_min, x_max)
+plt.ylim(y_min, y_max)
+plt.xticks(())
+plt.yticks(())
+
+
+
+
+#用Q15.16做了监督学习标签
+train.loc[(train.Q15 == 4 ) | (train.Q16 == 4) | (train.Q16 == 5), 'label'] = 1
+train.loc[(train.Q15 == 4 ) | (train.Q16 != 3) & (train.Q16 != 4) & (train.Q16 != 5), 'label'] = 2
+train_new = train.fillna(0)
+train_new = train_new.drop(['Q15','Q16'],axis=1)
+
+
+train_x = train_new.iloc[:,38:-2]
+# train_x = train_x.drop(['Q16'],axis=1)
+train_new.loc[train_new['label'] > 0 , 'label_3'] = 1
+train_new = train_new.fillna(0)
+train_y = train_new['label_3']
+
+x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2)
+
+clf = lgb.LGBMClassifier(
+)
+clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=400)
+# clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
+
+y_train_pred = clf.predict(x_train)
+y_test_pred = clf.predict(x_test)
+train_y_pred = clf.predict(train_x)
+train_report = metrics.classification_report(y_train, y_train_pred)
+test_report = metrics.classification_report(y_test, y_test_pred)
+print(train_report)
+print(test_report)
+
+
+feature_importances = pd.DataFrame({'Feature_name': x_train.columns,
+                                        'Importances': clf.feature_importances_})
+feature_importances = feature_importances.set_index('Feature_name')
+feature_importances = feature_importances.sort_values(by='Importances', ascending=False)
+print('Feature importances:', feature_importances.head(20))
+
+
+
+
+y_new_test_pred = pd.DataFrame(train_y_pred)
+y_new_test_pred = pd.DataFrame(y_new_test_pred ,columns=['zero_prob','one_prob'])
+
+# prd_inst_id = Prd_Inst_Id
+result = pd.concat([train_new, y_new_test_pred], axis=1)
+result.to_csv('F:/yeshanqiche_1_40.csv',index=False)
