@@ -80,17 +80,17 @@ def RematchingDate(train,bit):
     new_data_train = pd.concat([train[train['LABEL_3'] == 'T'], data], axis=0)
     return new_data_train
 #--------------------------------------------主程序区------------------------------------------------------#
-train_path = '09train_dc_torh.txt'
+train_path = '10test_dctorh.txt'
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 train = train.iloc[:,2:]
 
 #--------------------------------------------读取测试数据-----------------------
-test_path = '10test_dc_torh.txt'
+test_path = '11test_dctorh.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 test = test.iloc[:,2:]
 # test = test.drop(['Std_Prom_Name','Ofr_Name'], axis=1)
 #--------------------------------------------读取最新数据-----------------------
-new_test_path = '11test_dc_torh.txt'
+new_test_path = '12test_dctorh.txt'
 new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
 Prd_Inst_Id = new_test.iloc[:,0]
 # new_test = new_test.drop(['Std_Prom_Name','Ofr_Name'], axis=1)
