@@ -15,7 +15,7 @@ from sklearn.preprocessing import scale
 from sklearn.grid_search import GridSearchCV
 
 chunk_size = 200000
-data_cnt = 5000000
+data_cnt = 4000000
 
 
 
@@ -83,17 +83,17 @@ def RematchingDate(train,bit):
     new_data_train = pd.concat([train[train['label'] == 1], data], axis=0)
     return new_data_train
 #--------------------------------------------主程序区------------------------------------------------------#
-train_path = '09voc_train.txt'
+train_path = 'train_voc_201810.txt'
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 train = train.iloc[:,1:]
 
 #--------------------------------------------读取测试数据-----------------------
-test_path = '10voc_test.txt'
+test_path = 'test_voc_201811.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 test = test.iloc[:,1:]
 # test = test.drop(['Std_Prom_Name','Ofr_Name'], axis=1)
 #--------------------------------------------读取最新数据-----------------------
-new_test_path = '11voc_test.txt'
+new_test_path = 'test_voc_201812.txt'
 new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
 Prd_Inst_Id = new_test.iloc[:,0]
 # new_test = new_test.drop(['Std_Prom_Name','Ofr_Name'], axis=1)
@@ -121,10 +121,10 @@ train_test_data, cat_feature = Recoding_Cat_Data(train_test_data, cat_feature)
 
 
 
-ExE_col = ['Ofr_Name', 'Std_Prom_Name']
-train_test_data, ExE_col = Recoding_Cat_Data(train_test_data, ExE_col)
+# ExE_col = ['Ofr_Name']
+# train_test_data, ExE_col = Recoding_Cat_Data(train_test_data, ExE_col)
 
-cat_feature.append(ExE_col)
+# cat_feature.append(ExE_col)
 
 Ex_col = []
 obname = train_test_data.select_dtypes(include=["object"]).columns
