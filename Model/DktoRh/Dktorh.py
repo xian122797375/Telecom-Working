@@ -81,18 +81,18 @@ def RematchingDate(train,bit):
     new_data_train = pd.concat([train[train['LABEL_3'] == 'T'], data], axis=0)
     return new_data_train
 #--------------------------------------------主程序区------------------------------------------------------#
-train_path = '10test_dktorh.txt'
+train_path = '12dktorh_train.txt'
 train = chunk_read_data(train_path, chunk_size, data_cnt)
 train = train.iloc[:,3:]
 
 
 #--------------------------------------------读取测试数据-----------------------
-test_path = '11test_dktorh.txt'
+test_path = '01dktorh_test.txt'
 test = chunk_read_data(test_path, chunk_size, data_cnt)
 test = test.iloc[:,3:]
 
 #--------------------------------------------读取最新数据-----------------------
-new_test_path = '12test_dktorh.txt'
+new_test_path = '02dktorh_test.txt'
 new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
 Prd_Inst_Id = new_test.iloc[:,0]
 new_test = new_test.iloc[:,3:]
@@ -166,47 +166,47 @@ lgb_eval = lgb.Dataset(x_test, y_test, reference=lgb_train,free_raw_data=False)
 
 
 #----------------------------------调参数--------------------------#
-### 设置初始参数--不含交叉验证参数
-print('设置参数')
-params = {
-            'boosting_type': 'gbdt',
-            'objective': 'binary',
-            'metric': {'binary_logloss', 'auc'},
-            'num_threads': 40
-          }
-
-### 交叉验证(调参)
-print('交叉验证')
-min_merror = float('Inf')
-best_params = {}
-
-
-# 准确率
-print("调参1：提高准确率")
-for num_leaves in range(20,200,5):
-    for max_depth in range(3,8,1):
-        params['num_leaves'] = num_leaves
-        params['max_depth'] = max_depth
-        cv_results = lgb.cv(
-                            params,
-                            lgb_train,
-                            seed=2018,
-                            nfold=3,
-                            metrics=['binary_error'],
-                            early_stopping_rounds=10,
-                            verbose_eval=True
-                            )
-        mean_merror = pd.Series(cv_results['binary_error-mean']).min()
-        boost_rounds = pd.Series(cv_results['binary_error-mean']).argmin()
-        if mean_merror < min_merror:
-            min_merror = mean_merror
-            best_params['num_leaves'] = num_leaves
-            best_params['max_depth'] = max_depth
-
-params['num_leaves'] = best_params['num_leaves']
-params['max_depth'] = best_params['max_depth']
-
-print(params)
+# ### 设置初始参数--不含交叉验证参数
+# print('设置参数')
+# params = {
+#             'boosting_type': 'gbdt',
+#             'objective': 'binary',
+#             'metric': {'binary_logloss', 'auc'},
+#             'num_threads': 40
+#           }
+#
+# ### 交叉验证(调参)
+# print('交叉验证')
+# min_merror = float('Inf')
+# best_params = {}
+#
+#
+# # 准确率
+# print("调参1：提高准确率")
+# for num_leaves in range(20,200,5):
+#     for max_depth in range(3,8,1):
+#         params['num_leaves'] = num_leaves
+#         params['max_depth'] = max_depth
+#         cv_results = lgb.cv(
+#                             params,
+#                             lgb_train,
+#                             seed=2018,
+#                             nfold=3,
+#                             metrics=['binary_error'],
+#                             early_stopping_rounds=10,
+#                             verbose_eval=True
+#                             )
+#         mean_merror = pd.Series(cv_results['binary_error-mean']).min()
+#         boost_rounds = pd.Series(cv_results['binary_error-mean']).argmin()
+#         if mean_merror < min_merror:
+#             min_merror = mean_merror
+#             best_params['num_leaves'] = num_leaves
+#             best_params['max_depth'] = max_depth
+#
+# params['num_leaves'] = best_params['num_leaves']
+# params['max_depth'] = best_params['max_depth']
+#
+# print(params)
 #
 #
 #

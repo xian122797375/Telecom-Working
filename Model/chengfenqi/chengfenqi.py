@@ -1,4 +1,4 @@
-'''2018-10-18 电渠 语音包模型'''
+'''2019-02-26 橙分期'''
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import lightgbm as lgb
@@ -8,20 +8,22 @@ import pandas as pd
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
+
 import datetime
 from sklearn.externals import joblib
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
 from sklearn.grid_search import GridSearchCV
+# from feature_selector import FeatureSelector
 
-chunk_size = 2000
-data_cnt = 4000
+chunk_size = 20000
+data_cnt = 700000
 
-
-#----------------------------------------------功能区------------------------------------------------------#
 def chunk_read_data(file_path, chunk_size, data_cnt):
     '''文件批量读取'''
-    data = pd.read_csv(file_path, sep='	', header=0, iterator=True, chunksize=chunk_size, low_memory=False,encoding='gb18030')
+    data = pd.read_csv(file_path, sep='	', header=0, iterator=True, chunksize=chunk_size, low_memory=False ,encoding='gb18030')
     train = data.get_chunk(data_cnt)
     print('文件读取完毕,总计{}条'.format(train.shape[0]))
     return train
@@ -75,53 +77,38 @@ def Recoding_Cat_Data(data, feature):
     print('编码完成')
     return data, feature_new
 
-
 def RematchingDate(train,bit):
-    count = train[train['label'] == 1].shape[0]
-    data = train[train['label'] == 0].iloc[:count * bit,:]
-    new_data_train = pd.concat([train[train['label'] == 1], data], axis=0)
+    count = train[train['LAB'] == 1].shape[0]
+    data = train[train['LAB'] != 1].iloc[:count * bit,:]
+    new_data_train = pd.concat([train[train['LAB'] == 1], data], axis=0)
     return new_data_train
 #--------------------------------------------主程序区------------------------------------------------------#
-train_path = 'train_voc_201812.txt'
+train_path = '12train.txt'
 train = chunk_read_data(train_path, chunk_size, data_cnt)
-train = train.iloc[:,1:]
+prd_inst_id = train.Prd_Inst_Id
+train = train.iloc[:,2:]
 
-#--------------------------------------------读取测试数据-----------------------
-test_path = 'test_voc_201901.txt'
-test = chunk_read_data(test_path, chunk_size, data_cnt)
-test = test.iloc[:,1:]
-# test = test.drop(['Std_Prom_Name','Ofr_Name'], axis=1)
-#--------------------------------------------读取最新数据-----------------------
-new_test_path = 'test_voc_201902.txt'
-new_test = chunk_read_data(new_test_path, chunk_size, data_cnt)
-Prd_Inst_Id = new_test.iloc[:,0]
-# new_test = new_test.drop(['Std_Prom_Name','Ofr_Name'], axis=1)
-new_test = new_test.iloc[:,1:]
+train.loc[(train.Cert_flag2 == '是') & (train.Serial_flag2 == '是'),'LAB'] = 1
+test = train
+# train_new = train[train['LAB'] == 1]
+train = RematchingDate(train,4)
 
-#--------------------------数据合并-----------------------
-train = RematchingDate(train,2)
-
-train_test_data = pd.concat([train, test, new_test], axis=0)
+train_test_data = pd.concat([train, test], axis=0)
+train_test_data = train_test_data.fillna(value=0)
 
 train_test_data = Fix_Missing(train_test_data)
+# train_test_data = train_test_data.drop(['LAB'], axis=1)
 
-# drop_var = 'Exp_Date','LABEL_1','LABEL_2','LABEL_3'
-train_test_data = train_test_data.drop(['label'], axis=1)
-# train_test_data = train_test_data.drop(['Register_Term_Name'], axis=1)
 
-# train_x = train_x.drop(['Exp_Date'], axis=1)
 # label = ''
 cat_feature = []
 cat_feature, train_test_data = Data_Var_Convert(train_test_data)
 print(train_test_data.head(5))
-# cat_feature.append('Line_Rate')
+
+
 train_test_data, cat_feature = Recoding_Cat_Data(train_test_data, cat_feature)
 
 
-# ExE_col = ['Ofr_Name']
-# train_test_data, ExE_col = Recoding_Cat_Data(train_test_data, ExE_col)
-#
-# cat_feature.append(ExE_col)
 
 Ex_col = []
 obname = train_test_data.select_dtypes(include=["object"]).columns
@@ -135,19 +122,22 @@ print(Ex_col)
 
 train_test_data = train_test_data.drop(Ex_col, axis=1)
 
+
+
+
 length1 = train.shape[0]
 length2 = test.shape[0]
 train_x = train_test_data.iloc[:length1]
 test_x = train_test_data.iloc[length1:length1 + length2]
-new_test_x = train_test_data.iloc[length1 + length2:]
+
 
 train_x = pd.DataFrame(train_x)
 test_x = pd.DataFrame(test_x)
-new_test_x = pd.DataFrame(new_test_x)
 
-train_y = train['label']
-# train[train['LABEL_2'] == 'T']
-test_y = test['label']
+
+train_y = train['LAB']
+test_y = test['LAB']
+
 
 
 # 连续变量转化float
@@ -155,33 +145,35 @@ obname = train_x.select_dtypes(include=["object"]).columns
 for col in obname:
     train_x[col] = train_x[col].astype(np.float)
     test_x[col] = test_x[col].astype(np.float)
-    new_test_x[col] = new_test_x[col].astype(np.float)
+
 # 分类变量转化int
 for col in cat_feature:
     train_x[col] = train_x[col].astype(np.int)
     test_x[col] = test_x[col].astype(np.int)
-    new_test_x[col] = new_test_x[col].astype(np.int)
 
 
-train_y = train_y.replace('T','1')
-train_y = train_y.replace('F','0')
+# train_y = train_y.replace('T','1')
+train_y = train_y.fillna(value=0)
+train_x = train_x.fillna(value=0)
+test_y = test_y.fillna(value=0)
+test_y = test_y.fillna(value=0)
+# print (train_x.head(5),train_x.shape)
+# print (train_y.head(5),train_y.shape)
+# train_x = train_x.drop(['is_quan_nbr_New'], axis=1)
+# test_x = test_x.drop(['is_quan_nbr_New'], axis=1)
 
-test_y = test_y.replace('T','1')
-test_y = test_y.replace('F','0')
+train_x = train_x.drop(['Cert_flag2_New','Serial_flag2_New','接入号码','接入号码.1','产品实例标识','产品实例标识.1'], axis=1)
+test_x = test_x.drop(['Cert_flag2_New','Serial_flag2_New','接入号码','接入号码.1','产品实例标识','产品实例标识.1'], axis=1)
 
-print (train_x.head(5),train_x.shape)
-print (train_y.head(5),train_y.shape)
-
-
+train_x = train_x.drop(['LAB_New'], axis=1)
+test_x = test_x.drop(['LAB_New'], axis=1)
+train_x = train_x.drop(['Cert_flag3_New','Serial_flag3_New','Serial_flag3_New'], axis=1)
+test_x = test_x.drop(['Cert_flag3_New','Serial_flag3_New','Serial_flag3_New'], axis=1)
+# train_x = train_x.drop(['Cert_flag1_New','Serial_flag1_New','Serial_flag1_New'], axis=1)
 #--------------------------------------------算法模型搭建------------------------------------------------------#
 x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2)
-
-clf = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=40, reg_alpha=0.0, reg_lambda=1,
-    max_depth=6, n_estimators=3000, objective='binary',
-    subsample=0.7, colsample_bytree=0.7, subsample_freq=1,
-    learning_rate=0.05, min_child_weight=50, random_state=2018, n_jobs=-1)
+clf = lgb.LGBMClassifier()
 clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=400)
-# clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
 
 y_train_pred = clf.predict(x_train)
 y_test_pred = clf.predict(x_test)
@@ -194,42 +186,9 @@ test_y_pred = clf.predict(test_x)
 test_y_report = metrics.classification_report(test_y, test_y_pred)
 print(test_y_report)
 
-model_path = '20180910_DcZR_1bi2.model'
-joblib.dump(clf, model_path)
-
-y_new_test_pred = clf.predict_proba(new_test_x)
-y_new_test_pred = pd.DataFrame(y_new_test_pred ,columns=['zero_prob','one_prob'])
-
-prd_inst_id = Prd_Inst_Id
-result = pd.concat([prd_inst_id, y_new_test_pred.one_prob], axis=1)
-# result = result[result.one_prob >= 0.5]
-print(result)
-# result2 = result.iloc[:,0]
-result.to_csv('rh_09to11voc_result_1bi2.csv',index=False)
-
-#               precision    recall  f1-score   support
+# fpr,tpr,threshold = roc_curve(test_y, test_y_pred)
 #
-#           0       0.80      0.68      0.73    227872
-#           1       0.72      0.83      0.77    227944
-#
-# avg / total       0.76      0.75      0.75    455816
-#
-#              precision    recall  f1-score   support
-#
-#           0       0.78      0.66      0.71     57013
-#           1       0.70      0.81      0.75     56941
-#
-# avg / total       0.74      0.73      0.73    113954
-
-
-# precision    recall  f1-score   support
-#
-#           0       0.97      0.64      0.77   1843464
-#           1       0.17      0.81      0.28    164162
-#
-# avg / total       0.91      0.65      0.73   2007626
-
-# clf = joblib.load('20180910_DZR.model')
+# roc_auc = auc(fpr,tpr)
 
 
 feature_importances = pd.DataFrame({'Feature_name': x_train.columns,
@@ -238,41 +197,25 @@ feature_importances = feature_importances.set_index('Feature_name')
 feature_importances = feature_importances.sort_values(by='Importances', ascending=False)
 print('Feature importances:', feature_importances.head(20))
 
-a = len(feature_importances) * 7 // 10
-
-
-
-train_x = train_x[feature_importances.index[0:a]]
-test_x = test_x[feature_importances.index[0:a]]
-new_test_x = new_test_x[feature_importances.index[0:a]]
-
-x_train, x_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.3)
-
-clf = lgb.LGBMClassifier(
-)
-clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=400)
-# clf.fit(x_train, y_train, eval_set=[(x_test, y_test)], eval_metric='auc', early_stopping_rounds=100)
-
-y_train_pred = clf.predict(x_train)
-y_test_pred = clf.predict(x_test)
-train_report = metrics.classification_report(y_train, y_train_pred)
-test_report = metrics.classification_report(y_test, y_test_pred)
-print(train_report)
-print(test_report)
-
-test_y_pred = clf.predict(test_x)
-test_y_report = metrics.classification_report(test_y, test_y_pred)
-print(test_y_report)
-
-model_path = '20180910_DcZR_1bi23.model'
-joblib.dump(clf, model_path)
-
-y_new_test_pred = clf.predict_proba(new_test_x)
+y_new_test_pred = clf.predict_proba(test_x)
 y_new_test_pred = pd.DataFrame(y_new_test_pred ,columns=['zero_prob','one_prob'])
 
-prd_inst_id = Prd_Inst_Id
 result = pd.concat([prd_inst_id, y_new_test_pred.one_prob], axis=1)
 # result = result[result.one_prob >= 0.5]
-print(result)
-# result2 = result.iloc[:,0]
-result.to_csv('rh_09to11voc_result_1bi3.csv',index=False)
+result.to_csv('12train_result.csv',index=False,encoding='gb18030',sep=",")
+
+
+# plt.figure()
+# lw = 2
+# plt.figure(figsize=(10,10))
+# plt.plot(fpr, tpr, color='darkorange',
+#          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc) ###假正率为横坐标，真正率为纵坐标做曲线
+# plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+# plt.xlim([0.0, 1.0])
+# plt.ylim([0.0, 1.05])
+# plt.xlabel('False Positive Rate')
+# plt.ylabel('True Positive Rate')
+# plt.title('Receiver operating characteristic example')
+# plt.legend(loc="lower right")
+# plt.show()
+
