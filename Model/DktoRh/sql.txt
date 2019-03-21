@@ -1,0 +1,16 @@
+DROP table TD_mart.#DK_RH_MONTH;
+create table TD_mart.#DK_RH_MONTH as (
+select prd_inst_id,billing_cycle_id from PV_MART_Z.bas_prd_inst_month
+ where billing_cycle_id=201901 and Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where a.billing_cycle_id = 201901
+ and a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(a.std_prd_id),1,4)=1015)
+ union
+ select prd_inst_id,billing_cycle_id from PV_MART_Z.bas_prd_inst_month
+ where billing_cycle_id=201811 and Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where a.billing_cycle_id = 201811
+ and a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(a.std_prd_id),1,4)=1015)
+ union
+ select prd_inst_id,billing_cycle_id from PV_MART_Z.bas_prd_inst_month
+ where billing_cycle_id=201812 and Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where a.billing_cycle_id = 201812
+ and a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(a.std_prd_id),1,4)=1015))with data;

@@ -1,0 +1,212 @@
+delete from td_mart.BC_BIG_DATA_MARKET_MON
+where Td_Class = '04';
+insert into td_mart.BC_BIG_DATA_MARKET_MON
+(
+Month_id,
+prd_inst_id,
+latn_id,
+Td_Class,
+Celue
+)
+sel '201902' as Month_id, a.prd_inst_id,latn_id,'04' as Td_Class,'单宽转融'  from (sel prd_inst_id  from td_mart.dktorh_20190213
+where prob > 0.5 )a   
+
+
+ inner join
+ (sel serv_id    from pv_mart_z.INT_SENCE_LIST
+WHERE Sence_Code = '100010130024'
+and Batch_Id=20190200143900  --单宽
+)d
+ on a.prd_inst_id = d.serv_id
+ 
+ inner join
+(select prd_inst_id,latn_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where  a.Std_Prd_Inst_Stat_Id/100<>12 and  billing_cycle_id = 201901 and substr(trim(a.std_prd_id),1,4)=1015))b
+ on a.prd_inst_id = b.prd_inst_id
+
+
+ where a.prd_inst_id not in 
+ (sel prd_inst_id  from pd_data.tmp_yuanlei_zc201803_xx 
+where NEW_GROUP in('A0','A1') );
+
+
+insert into td_mart.BC_BIG_DATA_MARKET_MON
+(
+Month_id,
+prd_inst_id,
+latn_id,
+Td_Class,
+Celue
+)
+sel '201902' as Month_id, a.prd_inst_id,latn_id,'04' as Td_Class,'单宽转融'  from (sel prd_inst_id  from td_mart.dktorh_20190213)a   
+
+inner join
+(sel prd_inst_id,NEW_GROUP  from pd_data.tmp_yuanlei_zc201803_xx 
+where NEW_GROUP = 'A0' )t
+ on a.prd_inst_id = t.prd_inst_id
+
+
+ inner join
+ (sel serv_id    from pv_mart_z.INT_SENCE_LIST
+WHERE Sence_Code = '100010130024'
+and Batch_Id=20190200143900  --单宽
+)d
+ on a.prd_inst_id = d.serv_id
+ 
+ inner join
+(select prd_inst_id,latn_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where  a.Std_Prd_Inst_Stat_Id/100<>12 and  billing_cycle_id = 201901 and substr(trim(a.std_prd_id),1,4)=1015))b
+ on a.prd_inst_id = b.prd_inst_id
+
+ 
+   inner join
+(select prd_inst_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_cur a where  a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,6)=101510 ))c
+ on a.prd_inst_id = c.prd_inst_id;
+ 
+ insert into td_mart.BC_BIG_DATA_MARKET_MON
+(
+Month_id,
+prd_inst_id,
+latn_id,
+Td_Class,
+Celue
+)
+sel  '201902' as Month_id, a.prd_inst_id,latn_id,'04' as Td_Class,'单宽转融'  from (sel prd_inst_id  from td_mart.dktorh_20190213)a   
+
+
+ inner join
+ (sel serv_id    from pv_mart_z.INT_SENCE_LIST
+WHERE Sence_Code = '100010130024'
+and Batch_Id=20190200143900  --单宽
+)d
+ on a.prd_inst_id = d.serv_id
+ 
+ inner join
+(select prd_inst_id,latn_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where  a.Std_Prd_Inst_Stat_Id/100<>12 and  billing_cycle_id = 201901 and substr(trim(a.std_prd_id),1,4)=1015))b
+ on a.prd_inst_id = b.prd_inst_id
+
+ 
+   inner join
+(select prd_inst_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_cur a where  a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,6)=101510 ))c
+ on a.prd_inst_id = c.prd_inst_id
+ 
+  where a.prd_inst_id not in 
+ (sel prd_inst_id  from pd_data.tmp_yuanlei_zc201803_xx 
+where NEW_GROUP in('A0','A1'));
+
+
+-----------------------业支组-----------------------
+delete from td_mart.YZ_BIG_DATA_MARKET_MON
+where Td_Class = '04';
+insert into td_mart.YZ_BIG_DATA_MARKET_MON
+(
+Month_id,
+prd_inst_id,
+latn_id,
+Td_Class,
+Celue
+)
+sel '201902' as Month_id, a.prd_inst_id,latn_id,'04' as Td_Class,'单宽转融'  from (sel prd_inst_id  from td_mart.dktorh_20190213
+where prob > 0.43 )a   
+
+
+ inner join
+ (sel serv_id    from pv_mart_z.INT_SENCE_LIST
+WHERE Sence_Code = '100010130024'
+and Batch_Id=20190200143900  --单宽
+)d
+ on a.prd_inst_id = d.serv_id
+ 
+ inner join
+(select prd_inst_id,latn_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where  a.Std_Prd_Inst_Stat_Id/100<>12 and  billing_cycle_id = 201901 and substr(trim(a.std_prd_id),1,4)=1015))b
+ on a.prd_inst_id = b.prd_inst_id
+
+
+ where a.prd_inst_id  in 
+ (sel prd_inst_id  from pd_data.tmp_yuanlei_zc201803_xx 
+where NEW_GROUP in('A1') );
+
+
+insert into td_mart.YZ_BIG_DATA_MARKET_MON
+(
+Month_id,
+prd_inst_id,
+latn_id,
+Td_Class,
+Celue
+)
+sel '201902' as Month_id, a.prd_inst_id,latn_id,'04' as Td_Class,'单宽转融'  from (sel prd_inst_id  from td_mart.dktorh_20190213)a   
+
+inner join
+(sel prd_inst_id,NEW_GROUP  from pd_data.tmp_yuanlei_zc201803_xx 
+where NEW_GROUP = 'A1' )t
+ on a.prd_inst_id = t.prd_inst_id
+
+
+ inner join
+ (sel serv_id    from pv_mart_z.INT_SENCE_LIST
+WHERE Sence_Code = '100010130024'
+and Batch_Id=20190200143900  --单宽
+)d
+ on a.prd_inst_id = d.serv_id
+ 
+ inner join
+(select prd_inst_id,latn_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where  a.Std_Prd_Inst_Stat_Id/100<>12 and  billing_cycle_id = 201901 and substr(trim(a.std_prd_id),1,4)=1015))b
+ on a.prd_inst_id = b.prd_inst_id
+
+ 
+   inner join
+(select prd_inst_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_cur a where  a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,6)=101510 ))c
+ on a.prd_inst_id = c.prd_inst_id;
+ 
+ insert into td_mart.YZ_BIG_DATA_MARKET_MON
+(
+Month_id,
+prd_inst_id,
+latn_id,
+Td_Class,
+Celue
+)
+sel top 512  '201902' as Month_id, a.prd_inst_id,latn_id,'04' as Td_Class,'单宽转融'  from (sel prd_inst_id  from td_mart.dktorh_20190213)a   
+
+
+ inner join
+ (sel serv_id    from pv_mart_z.INT_SENCE_LIST
+WHERE Sence_Code = '100010130024'
+and Batch_Id=20190200143900  --单宽
+)d
+ on a.prd_inst_id = d.serv_id
+ 
+ inner join
+(select prd_inst_id,latn_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  not in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_month a where  a.Std_Prd_Inst_Stat_Id/100<>12 and  billing_cycle_id = 201901 and substr(trim(a.std_prd_id),1,4)=1015))b
+ on a.prd_inst_id = b.prd_inst_id
+
+ 
+   inner join
+(select prd_inst_id  from PV_MART_Z.bas_prd_inst_month
+ where Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,4)=3020 and billing_cycle_id = 201901
+ and acct_id  in (SELECT ACCT_ID FROM pv_mart_z.bas_prd_inst_cur a where  a.Std_Prd_Inst_Stat_Id/100<>12 and substr(trim(std_prd_id),1,6)=101510 ))c
+ on a.prd_inst_id = c.prd_inst_id
+ 
+  where a.prd_inst_id not in 
+ (sel prd_inst_id  from pd_data.tmp_yuanlei_zc201803_xx 
+where NEW_GROUP in('A0','A1'));
+
+
+ 
